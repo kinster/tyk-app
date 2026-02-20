@@ -1,8 +1,13 @@
 pipeline {
   agent any
-  options { timestamps() }
+  options { skipDefaultCheckout(true); timestamps() }
+
   stages {
-    // REMOVE your custom "stage('Checkout'){ checkout scm }"
+    stage('Checkout') {
+      steps {
+        checkout scm
+      }
+    }
 
     stage('Install Docker CLI (inside Jenkins container)') {
       steps {
