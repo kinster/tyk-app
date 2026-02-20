@@ -3,20 +3,6 @@ pipeline {
   options { timestamps() }
 
   stages {
-
-    stage('Install Docker CLI (inside Jenkins container)') {
-      steps {
-        sh '''
-          if ! command -v docker >/dev/null 2>&1; then
-            apt-get update -y
-            apt-get install -y docker.io docker-compose-plugin
-          fi
-          docker version
-          docker compose version || true
-        '''
-      }
-    }
-
     stage('Build & (Re)Deploy Backend via Docker Compose') {
       steps {
         sh '''
