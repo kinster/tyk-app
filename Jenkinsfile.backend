@@ -1,13 +1,8 @@
 pipeline {
   agent any
-  options { skipDefaultCheckout(true); timestamps() }
+  options { timestamps() }
 
   stages {
-    stage('Checkout') {
-      steps {
-        checkout scm
-      }
-    }
 
     stage('Install Docker CLI (inside Jenkins container)') {
       steps {
