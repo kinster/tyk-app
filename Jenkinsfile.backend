@@ -1,14 +1,8 @@
 pipeline {
   agent any
-
   options { timestamps() }
-
   stages {
-    stage('Checkout') {
-      steps {
-        checkout scm
-      }
-    }
+    // REMOVE your custom "stage('Checkout'){ checkout scm }"
 
     stage('Install Docker CLI (inside Jenkins container)') {
       steps {
@@ -26,11 +20,8 @@ pipeline {
     stage('Build & (Re)Deploy Backend via Docker Compose') {
       steps {
         sh '''
-          # Rebuild and restart just the backend service
           docker compose -f docker-compose.yml up -d --build backend
-
-          # Optional: show running containers
-          docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Ports}}\t{{.Status}}"
+          docker ps --format "table {{.Names}}\\t{{.Image}}\\t{{.Ports}}\\t{{.Status}}"
         '''
       }
     }
