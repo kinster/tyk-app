@@ -6,7 +6,7 @@ pipeline {
     stage('Build & (Re)Deploy Backend via Docker Compose') {
       steps {
         sh '''
-          docker compose -f docker-compose.yml up -d --build backend
+          docker-compose -f docker-compose.yml up -d --build backend
           docker ps --format "table {{.Names}}\\t{{.Image}}\\t{{.Ports}}\\t{{.Status}}"
         '''
       }
