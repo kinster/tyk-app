@@ -1,0 +1,11 @@
+# Compiled Go plugin binaries (built by tyk-plugin-compiler in CI)
+*.so
+
+# macOS
+.DS_Store
+
+# Environment files
+*.env
+
+# Temporary deploy files
+/tmp/

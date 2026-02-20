@@ -1,0 +1,76 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "dummy-api",
+    "version": "1.0.0"
+  },
+  "paths": {},
+  "components": {
+    "securitySchemes": {
+      "jwtAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "security": [{ "jwtAuth": [] }],
+  "x-tyk-api-gateway": {
+    "info": {
+      "name": "dummy-api",
+      "id": "dummy-api-v1",
+      "orgId": "DYNAMIC_ORG_ID",
+      "state": { "active": true }
+    },
+    "upstream": {
+      "url": "http://dummy-backend:3001"
+    },
+    "server": {
+      "listenPath": {
+        "value": "/dummy-proxy/",
+        "strip": true
+      },
+      "authentication": {
+        "enabled": true,
+        "securitySchemes": {
+          "jwtAuth": {
+            "enabled": true,
+            "signingMethod": "rsa",
+            "source": "DYNAMIC_JWKS_URL",
+            "identityBaseField": "sub",
+            "defaultPolicies": ["DYNAMIC_POLICY_ID"],
+            "header": {
+              "enabled": true,
+              "name": "Authorization"
+            }
+          }
+        }
+      }
+    },
+    "middleware": {
+      "global": {
+        "pluginConfig": {
+          "driver": "goplugin"
+        },
+        "prePlugins": [
+          {
+            "enabled": true,
+            "functionName": "AddChannelHeader",
+            "name": "AddChannelHeader",
+            "path": "middleware/add_channel_v5.11.0_linux_arm64.so",
+            "rawBodyOnly": false
+          }
+        ],
+        "responsePlugins": [
+          {
+            "enabled": true,
+            "functionName": "TransformResponse",
+            "name": "TransformResponse",
+            "path": "middleware/transform_response_v5.11.0_linux_arm64.so",
+            "rawBodyOnly": false
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,43 @@
+pipeline {
+  agent any
+
+  options { timestamps() }
+
+  stages {
+    stage('Docker version') {
+      steps {
+        sh '''
+          set -e
+          docker version
+        '''
+      }
+    }
+
+    stage('Compose version') {
+      steps {
+        sh '''
+          set -e
+          docker compose version
+        '''
+      }
+    }
+
+    stage('Deploy Backend') {
+      steps {
+        sh '''
+          set -e
+          docker compose -f docker-compose.yml up -d --build backend
+        '''
+      }
+    }
+
+    stage('Show running containers') {
+      steps {
+        sh '''
+          set -e
+          docker ps
+        '''
+      }
+    }
+  }
+}
