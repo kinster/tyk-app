@@ -1,27 +1,17 @@
-// Add Channel Header Middleware
-// Equivalent to Apigee: Add-Channel Policy
-
+// Add Channel Header Middleware (Apigee Add-Channel equivalent)
 var addChannelHeader = new TykJS.TykMiddleware.NewMiddleware({});
 
 addChannelHeader.NewProcessRequest(function(request, session, config) {
-
-    // Default channel
-    var channel = "Web";
-
-    // Read from API key metadata
+    var channel = "Web"; // default if not present on the key
     if (session && session.meta_data && session.meta_data.channel) {
         channel = session.meta_data.channel;
     }
 
-    // Inject into headers
     request.SetHeaders["X-CHANNEL"] = channel;
-
-    // Apigee-compat prefix header
     request.SetHeaders["X-Forwarded-Prefix"] = "/dummy-proxy/v1";
 
     log("Added X-CHANNEL header: " + channel);
-
-    return addChannelHeader.ReturnData(request, session.meta_data);
+    return addChannelHeader.ReturnData(request, session && session.meta_data ? session.meta_data : {});
 });
 
 log("Add-channel middleware loaded");

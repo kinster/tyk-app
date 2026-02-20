@@ -1,0 +1,48 @@
+pipeline {
+  agent any
+  environment {
+    TYK_ADMIN_SECRET = 'foo'                 // matches compose env for tyk-gateway
+    TYK_GATEWAY_INTERNAL = 'http://tyk-gateway:8080'
+    APPS_VOL = '/tyk/apps'                   // shared volume mount inside Jenkins
+    MW_VOL   = '/tyk/middleware'             // shared volume mount inside Jenkins
+  }
+  options { timestamps() }
+
+  stages {
+    stage('Checkout') {
+      steps { checkout scm }
+    }
+
+    stage('Publish API defs + Middleware to shared volumes') {
+      steps {
+        sh '''
+          set -e
+          # Ensure target dirs exist
+          mkdir -p ${APPS_VOL} ${MW_VOL}
+
+          # Copy new/updated files
+          cp -v tyk/apis/*.json ${APPS_VOL}/ || true
+          cp -v tyk/middleware/*.js ${MW_VOL}/ || true
+
+          echo "Files now in shared volumes:"
+          ls -la ${APPS_VOL}
+          ls -la ${MW_VOL}
+        '''
+      }
+    }
+
+    stage('Hot Reload Tyk Gateway') {
+      steps {
+        sh '''
+          echo "Calling Gateway reload endpoint..."
+          curl -fsSL -X POST \
+            -H "x-tyk-authorization: ${TYK_ADMIN_SECRET}" \
+            ${TYK_GATEWAY_INTERNAL}/tyk/reload
+
+          echo "Reload request sent. Verify API route:"
+          curl -fsSL http://tyk-gateway:8080/dummy-proxy/hello || true
+        '''
+      }
+    }
+  }
+}

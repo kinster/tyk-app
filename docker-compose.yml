@@ -1,0 +1,66 @@
+version: "3.9"
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: unless-stopped
+
+  tyk-gateway:
+    image: tykio/tyk-gateway:latest
+    container_name: tyk-gateway
+    depends_on:
+      - redis
+    ports:
+      - "8080:8080"
+    environment:
+      # Core config (env-style avoids shipping tyk.conf)
+      TYK_GW_LISTENPORT: "8080"
+      TYK_GW_SECRET: "foo"                   # admin secret for /tyk/* endpoints
+      TYK_GW_STORAGE_TYPE: "redis"
+      TYK_GW_STORAGE_HOST: "redis"
+      TYK_GW_STORAGE_PORT: "6379"
+      TYK_GW_USEDBAPPCONFIGS: "false"        # file-based apis
+      TYK_GW_APP_PATH: "/opt/tyk-gateway/apps"
+      TYK_GW_MIDDLEWARE_PATH: "/opt/tyk-gateway/middleware"
+      TYK_GW_TYKJSPATH: "/opt/tyk-gateway/middleware"
+      TYK_GW_ENABLEJSVM: "true"              # enable JS VM
+      TYK_GW_POLICIES_POLICY_SOURCE: "file"
+      TYK_GW_POLICIES_POLICY_PATH: "/opt/tyk-gateway/policies"
+      TYK_GW_LOGLEVEL: "info"
+      TYK_GW_LOGFORMAT: "json"
+    volumes:
+      - tyk_apps:/opt/tyk-gateway/apps
+      - tyk_mw:/opt/tyk-gateway/middleware
+
+  backend:
+    build:
+      context: ./backend
+    container_name: dummy-backend
+    restart: unless-stopped
+    environment:
+      - PORT=3001
+    ports:
+      - "3001:3001"
+
+  jenkins:
+    image: jenkins/jenkins:lts-jdk17
+    container_name: jenkins
+    user: root
+    restart: unless-stopped
+    ports:
+      - "9090:8080"      # Jenkins UI at http://localhost:9090
+      - "50000:50000"    # inbound agent port (optional)
+    environment:
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Shared volumes so Jenkins can publish APIs to the Gateway
+      - tyk_apps:/tyk/apps
+      - tyk_mw:/tyk/middleware
+
+volumes:
+  jenkins_home:
+  tyk_apps:
+  tyk_mw:

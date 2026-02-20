@@ -1,0 +1,38 @@
+pipeline {
+  agent any
+
+  options { timestamps() }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        checkout scm
+      }
+    }
+
+    stage('Install Docker CLI (inside Jenkins container)') {
+      steps {
+        sh '''
+          if ! command -v docker >/dev/null 2>&1; then
+            apt-get update -y
+            apt-get install -y docker.io docker-compose-plugin
+          fi
+          docker version
+          docker compose version || true
+        '''
+      }
+    }
+
+    stage('Build & (Re)Deploy Backend via Docker Compose') {
+      steps {
+        sh '''
+          # Rebuild and restart just the backend service
+          docker compose -f docker-compose.yml up -d --build backend
+
+          # Optional: show running containers
+          docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Ports}}\t{{.Status}}"
+        '''
+      }
+    }
+  }
+}
