@@ -1,0 +1,10 @@
+{
+  "type": "apidef",
+  "files": [
+    { "file": "./apis/dummy-api.json" }
+  ],
+  "policies": [],
+  "assets": [
+    { "file": "./middleware/add-channel.js" }
+  ]
+}
