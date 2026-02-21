@@ -34,13 +34,13 @@ pipeline {
     stage('Hot Reload Tyk Gateway') {
       steps {
         sh '''
-          echo "Calling Gateway reload endpoint..."
-          curl -fsSL -X \
-            -H "x-tyk-authorization: ${TYK_ADMIN_SECRET}" \
-            ${TYK_GATEWAY_INTERNAL}/tyk/reload
+            echo "Calling Gateway reload endpoint..."
+            curl -fsSL \
+                -H "x-tyk-authorization: 352d20ee67be67f6340b4c0605b044b7" \
+                http://tyk-gateway:8080/tyk/reload
 
-          echo "Reload request sent. Verify API route:"
-          curl -fsSL http://tyk-gateway:8080/dummy-proxy/hello || true
+            echo "Reload request sent. Verify API route:"
+            curl -fsSL http://tyk-gateway:8080/dummy-proxy/hello || true
         '''
       }
     }
