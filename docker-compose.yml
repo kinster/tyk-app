@@ -41,7 +41,7 @@ services:
     environment:
       - PORT=3001
     ports:
-      - "3001:3001"
+      - "3030:3001"
 
   jenkins:
     image: jenkins/jenkins:lts-jdk17
