@@ -1,7 +1,7 @@
 pipeline {
   agent any
   environment {
-    TYK_ADMIN_SECRET = 'foo'                 // matches compose env for tyk-gateway
+    TYK_ADMIN_SECRET = '352d20ee67be67f6340b4c0605b044b7'                 // matches compose env for tyk-gateway
     TYK_GATEWAY_INTERNAL = 'http://tyk-gateway:8080'
     APPS_VOL = '/tyk/apps'                   // shared volume mount inside Jenkins
     MW_VOL   = '/tyk/middleware'             // shared volume mount inside Jenkins
