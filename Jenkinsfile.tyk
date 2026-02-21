@@ -35,7 +35,7 @@ pipeline {
       steps {
         sh '''
           echo "Calling Gateway reload endpoint..."
-          curl -fsSL -X POST \
+          curl -fsSL -X \
             -H "x-tyk-authorization: ${TYK_ADMIN_SECRET}" \
             ${TYK_GATEWAY_INTERNAL}/tyk/reload
 
