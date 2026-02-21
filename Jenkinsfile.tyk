@@ -1,48 +1,32 @@
 pipeline {
   agent any
+
   environment {
-    TYK_ADMIN_SECRET = '352d20ee67be67f6340b4c0605b044b7'                 // matches compose env for tyk-gateway
-    TYK_GATEWAY_INTERNAL = 'http://tyk-gateway:8080'
-    APPS_VOL = '/tyk/apps'                   // shared volume mount inside Jenkins
-    MW_VOL   = '/tyk/middleware'             // shared volume mount inside Jenkins
+    DASHBOARD_ADMIN_KEY = credentials('tyk-dashboard-admin-key')
+    DASHBOARD_URL = 'http://tyk-dashboard:3000'
   }
+
   options { timestamps() }
 
   stages {
+
     stage('Checkout') {
       steps { checkout scm }
     }
 
-    stage('Publish API defs + Middleware to shared volumes') {
+    stage('Create or Update API in Dashboard') {
       steps {
         sh '''
-          set -e
-          # Ensure target dirs exist
-          mkdir -p ${APPS_VOL} ${MW_VOL}
+          echo "Creating API in Tyk Dashboard..."
 
-          # Copy new/updated files
-          cp -v tyk/apis/*.json ${APPS_VOL}/ || true
-          cp -v tyk/middleware/*.js ${MW_VOL}/ || true
-
-          echo "Files now in shared volumes:"
-          ls -la ${APPS_VOL}
-          ls -la ${MW_VOL}
+          curl -s -X POST \
+            -H "authorization: ${DASHBOARD_ADMIN_KEY}" \
+            -H "Content-Type: application/json" \
+            ${DASHBOARD_URL}/api/apis \
+            -d @tyk/apis/dummy-api.json
         '''
       }
     }
 
-    stage('Hot Reload Tyk Gateway') {
-      steps {
-        sh '''
-            echo "Calling Gateway reload endpoint..."
-            curl -fsSL \
-                -H "x-tyk-authorization: 352d20ee67be67f6340b4c0605b044b7" \
-                http://tyk-gateway:8080/tyk/reload
-
-            echo "Reload request sent. Verify API route:"
-            curl -fsSL http://tyk-gateway:8080/dummy-proxy/hello || true
-        '''
-      }
-    }
   }
 }

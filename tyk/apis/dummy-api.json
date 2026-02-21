@@ -1,35 +1,34 @@
 {
   "name": "dummy-api",
+  "slug": "dummy-api",
   "api_id": "dummy-api-v1",
-  "org_id": "default",
+  "org_id": "699834a0d5d08e0001ee1c98",
   "use_keyless": true,
-  "auth": {
-    "use_param": false,
-    "use_cookie": false,
-    "auth_header_name": "Authorization"
-  },
+  "active": true,
+
   "proxy": {
-    "target_url": "http://backend:3001",
     "listen_path": "/dummy-proxy/",
+    "target_url": "http://dummy-backend:3001",
     "strip_listen_path": true
   },
+
   "version_data": {
     "not_versioned": true,
     "versions": {
-      "default": {
-        "name": "default",
+      "Default": {
+        "name": "Default",
         "use_extended_paths": true
       }
     }
   },
+
   "custom_middleware": {
     "pre": [
       {
         "name": "add-channel-header",
-        "path": "middleware/add-channel.js"
+        "path": "/opt/tyk-gateway/middleware/add-channel.js"
       }
     ],
     "driver": "javascript"
-  },
-  "active": true
+  }
 }
