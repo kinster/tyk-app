@@ -35,10 +35,7 @@ pipeline {
       steps {
         sh '''
           echo "Calling Gateway reload endpoint..."
-          curl -fsSL -X POST \
-            -H "x-tyk-authorization: ${TYK_ADMIN_SECRET}" \
-            ${TYK_GATEWAY_INTERNAL}/tyk/reload
-
+          curl -fsSL -X POST -H "x-tyk-authorization: foo" http://host.docker.internal:8080/tyk/reload
           echo "Reload request sent. Verify API route:"
           curl -fsSL http://tyk-gateway:8080/dummy-proxy/hello || true
         '''
