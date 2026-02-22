@@ -20,6 +20,9 @@ pipeline {
             '''
         }
     }
+    stage('Checkout') {
+      steps { checkout scm }
+    }
 
     stage('Reload Gateway') {
         steps {
@@ -31,10 +34,20 @@ pipeline {
         }
     }
 
-    stage('Checkout') {
-      steps { checkout scm }
-    }
 
+    stage('Create or Update API in Dashboard') {
+      steps {
+        sh '''
+          echo "Creating API in Tyk Dashboard..."
+
+          curl -s -X POST \
+            -H "authorization: ${DASHBOARD_ADMIN_KEY}" \
+            -H "Content-Type: application/json" \
+            ${DASHBOARD_URL}/api/apis \
+            -d @tyk/apis/dummy-api.json
+        '''
+      }
+    }
 
   }
 }
