@@ -4,6 +4,7 @@ pipeline {
   environment {
     DASHBOARD_ADMIN_KEY = credentials('tyk-dashboard-admin-key')
     DASHBOARD_URL = 'http://tyk-dashboard:3000'
+    GATEWAY_URL = 'http://tyk-gateway:8080'
   }
 
   options { timestamps() }
@@ -25,7 +26,7 @@ pipeline {
             sh '''
             curl -s -X POST \
                 -H "authorization: ${DASHBOARD_ADMIN_KEY}" \
-                ${DASHBOARD_URL}/api/system/reload
+                ${GATEWAY_URL}/api/system/reload
             '''
         }
     }
@@ -34,19 +35,6 @@ pipeline {
       steps { checkout scm }
     }
 
-    stage('Create or Update API in Dashboard') {
-      steps {
-        sh '''
-          echo "Creating API in Tyk Dashboard..."
-
-          curl -s -X POST \
-            -H "authorization: ${DASHBOARD_ADMIN_KEY}" \
-            -H "Content-Type: application/json" \
-            ${DASHBOARD_URL}/api/apis \
-            -d @tyk/apis/dummy-api.json
-        '''
-      }
-    }
 
   }
 }
