@@ -6,6 +6,7 @@ pipeline {
     TYK_GW_SECRET = credentials('tyk-gw-secret')
     DASHBOARD_URL = 'http://tyk-dashboard:3000'
     GATEWAY_URL = 'http://tyk-gateway:8080'
+    API_ID = 'dummy-api-v1'
   }
 
   options { timestamps() }
