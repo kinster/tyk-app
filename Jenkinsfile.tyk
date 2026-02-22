@@ -15,7 +15,7 @@ pipeline {
             sh '''
             curl -s -X DELETE \
                 -H "authorization: ${DASHBOARD_ADMIN_KEY}" \
-                http://${DASHBOARD_URL}/api/apis/dummy-api-v1
+                ${DASHBOARD_URL}/api/apis/dummy-api-v1
             '''
         }
     }
@@ -25,7 +25,7 @@ pipeline {
             sh '''
             curl -s -X POST \
                 -H "authorization: ${DASHBOARD_ADMIN_KEY}" \
-                http://${DASHBOARD_URL}/api/reload
+                ${DASHBOARD_URL}/api/reload
             '''
         }
     }
