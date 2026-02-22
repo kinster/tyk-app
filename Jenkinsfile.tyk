@@ -17,13 +17,13 @@ pipeline {
         steps {
             sh '''
             echo "Deleting API if it exists..."
-
-            curl -s -o /dev/null -w "%{http_code}" \
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
             -X DELETE \
             -H "authorization: ${DASHBOARD_ADMIN_KEY}" \
-            ${DASHBOARD_URL}/api/apis/${API_ID} || true
+            ${DASHBOARD_URL}/api/apis/${API_ID})
+
+            echo "Delete returned: $HTTP_CODE"
             '''
-        }
     }
 
     stage('Checkout') {
