@@ -10,25 +10,23 @@ pipeline {
 
   stages {
 
-    stages {
-        stage('Delete API from Dashboard') {
-            steps {
-                sh '''
-                curl -s -X DELETE \
-                  -H "authorization: $TYK_AUTH" \
-                  http://tyk-dashboard:3000/api/apis/dummy-api-v1
-                '''
-            }
+    stage('Delete API from Dashboard') {
+        steps {
+            sh '''
+            curl -s -X DELETE \
+                -H "authorization: $TYK_AUTH" \
+                http://tyk-dashboard:3000/api/apis/dummy-api-v1
+            '''
         }
+    }
 
-        stage('Reload Gateway') {
-            steps {
-                sh '''
-                curl -s -X POST \
-                  -H "authorization: $TYK_AUTH" \
-                  http://tyk-dashboard:3000/api/reload
-                '''
-            }
+    stage('Reload Gateway') {
+        steps {
+            sh '''
+            curl -s -X POST \
+                -H "authorization: $TYK_AUTH" \
+                http://tyk-dashboard:3000/api/reload
+            '''
         }
     }
 
