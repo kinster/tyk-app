@@ -15,7 +15,7 @@ pipeline {
 
     stage('Delete API from Dashboard') {
         steps {
-            sh '''
+          sh '''
             echo "Deleting API if it exists..."
             HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
             -X DELETE \
@@ -24,6 +24,7 @@ pipeline {
 
             echo "Delete returned: $HTTP_CODE"
             '''
+        }
     }
 
     stage('Checkout') {
