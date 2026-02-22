@@ -3,6 +3,7 @@ pipeline {
 
   environment {
     DASHBOARD_ADMIN_KEY = credentials('tyk-dashboard-admin-key')
+    TYK_GW_SECRET = credentials('tyk-gw-secret')
     DASHBOARD_URL = 'http://tyk-dashboard:3000'
     GATEWAY_URL = 'http://tyk-gateway:8080'
   }
@@ -33,7 +34,7 @@ pipeline {
             sh '''
             curl -s -X POST \
                 -H "authorization: ${DASHBOARD_ADMIN_KEY}" \
-                ${GATEWAY_URL}/tyk/reload/group
+                ${DASHBOARD_URL}/api/system/reload
             '''
         }
     }
