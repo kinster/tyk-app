@@ -14,8 +14,8 @@ pipeline {
         steps {
             sh '''
             curl -s -X DELETE \
-                -H "authorization: $TYK_AUTH" \
-                http://tyk-dashboard:3000/api/apis/dummy-api-v1
+                -H "authorization: ${DASHBOARD_ADMIN_KEY}" \
+                http://${DASHBOARD_URL}/api/apis/dummy-api-v1
             '''
         }
     }
@@ -24,8 +24,8 @@ pipeline {
         steps {
             sh '''
             curl -s -X POST \
-                -H "authorization: $TYK_AUTH" \
-                http://tyk-dashboard:3000/api/reload
+                -H "authorization: ${DASHBOARD_ADMIN_KEY}" \
+                http://${DASHBOARD_URL}/api/reload
             '''
         }
     }
