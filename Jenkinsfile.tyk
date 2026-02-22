@@ -14,12 +14,16 @@ pipeline {
     stage('Delete API from Dashboard') {
         steps {
             sh '''
-            curl -s -X DELETE \
-                -H "authorization: ${DASHBOARD_ADMIN_KEY}" \
-                ${DASHBOARD_URL}/api/apis/dummy-api-v1
+            echo "Deleting API if it exists..."
+
+            curl -s -o /dev/null -w "%{http_code}" \
+            -X DELETE \
+            -H "authorization: ${DASHBOARD_ADMIN_KEY}" \
+            ${DASHBOARD_URL}/api/apis/${API_ID} || true
             '''
         }
     }
+
     stage('Checkout') {
       steps { checkout scm }
     }
@@ -29,7 +33,7 @@ pipeline {
             sh '''
             curl -s -X POST \
                 -H "authorization: ${DASHBOARD_ADMIN_KEY}" \
-                ${GATEWAY_URL}/api/system/reload
+                ${GATEWAY_URL}/tyk/reload/group
             '''
         }
     }
