@@ -25,7 +25,7 @@ pipeline {
             sh '''
             curl -s -X POST \
                 -H "authorization: ${DASHBOARD_ADMIN_KEY}" \
-                ${DASHBOARD_URL}/api/reload
+                ${DASHBOARD_URL}/api/system/reload
             '''
         }
     }
