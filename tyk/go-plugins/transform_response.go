@@ -22,8 +22,9 @@ type TransformedResponse struct {
 	Transformed bool   `json:"transformed"`
 }
 
-// TransformResponse is the response Go plugin equivalent of the transform_response
-// Go template. It renames fields and adds transformed:true.
+// TransformResponse is the response Go plugin.
+// It renames fields from the backend response before returning to the client.
+// Tyk calls this function by name as defined in the API definition.
 func TransformResponse(rw http.ResponseWriter, res *http.Response, req *http.Request) {
 	if res == nil {
 		return
@@ -31,15 +32,13 @@ func TransformResponse(rw http.ResponseWriter, res *http.Response, req *http.Req
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
-		logger.WithError(err).Error("TransformResponse: failed to read response body")
 		return
 	}
 	res.Body.Close()
 
 	var upstream BackendResponse
 	if err := json.Unmarshal(body, &upstream); err != nil {
-		logger.WithError(err).Error("TransformResponse: failed to parse response body")
-		// Pass through unchanged if we can't parse
+		// Pass through unchanged if body can't be parsed
 		res.Body = io.NopCloser(bytes.NewBuffer(body))
 		return
 	}
@@ -53,7 +52,6 @@ func TransformResponse(rw http.ResponseWriter, res *http.Response, req *http.Req
 
 	newBody, err := json.Marshal(transformed)
 	if err != nil {
-		logger.WithError(err).Error("TransformResponse: failed to marshal transformed body")
 		res.Body = io.NopCloser(bytes.NewBuffer(body))
 		return
 	}
@@ -61,6 +59,4 @@ func TransformResponse(rw http.ResponseWriter, res *http.Response, req *http.Req
 	res.Body = io.NopCloser(bytes.NewBuffer(newBody))
 	res.Header.Set("Content-Type", "application/json")
 	res.ContentLength = int64(len(newBody))
-
-	logger.Info("TransformResponse: response body transformed successfully")
 }
