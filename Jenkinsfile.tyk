@@ -16,13 +16,26 @@ pipeline {
       steps { checkout scm }
     }
 
+    stage('Build Go Plugins') {
+      steps {
+        sh '''
+          echo "Building Go plugins..."
+          docker build -t tyk-go-plugins tyk/go-plugins/
+          echo "Go plugins built."
+        '''
+      }
+    }
+
     stage('Deploy Middleware') {
       steps {
         sh '''
-          echo "Copying middleware to Tyk Gateway..."
-          docker cp tyk/middleware/add-channel.js tyk-gateway:/opt/tyk-gateway/middleware/add-channel.js
-          docker cp tyk/middleware/transform-response.js tyk-gateway:/opt/tyk-gateway/middleware/transform-response.js
-          echo "Middleware deployed."
+          echo "Deploying Go plugins to Tyk Gateway..."
+          # Extract .so files from the build image into the gateway container
+          docker run --rm \
+            -v tyk_mw:/mw \
+            tyk-go-plugins \
+            sh -c "cp /plugins/*.so /mw/"
+          echo "Go plugins deployed to middleware volume."
         '''
       }
     }

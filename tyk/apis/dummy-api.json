@@ -14,32 +14,24 @@
       "versions": {
         "Default": {
           "name": "Default",
-          "use_extended_paths": true,
-          "extended_paths": {
-            "transform_response": [
-              {
-                "path": "hello",
-                "method": "GET",
-                "template_data": {
-                  "input_type": "json",
-                  "enable_session": false,
-                  "template_mode": "blob",
-                  "template_source": "eyJzdGF0dXMiOiAie3subWVzc2FnZX19IiwgImNoYW5uZWwiOiAie3suY2hhbm5lbFJlY2VpdmVkfX0iLCAicHJlZml4IjogInt7LnByZWZpeFJlY2VpdmVkfX0iLCAidHJhbnNmb3JtZWQiOiB0cnVlfQo="
-                }
-              }
-            ]
-          }
+          "use_extended_paths": true
         }
       }
     },
     "custom_middleware": {
       "pre": [
         {
-          "name": "addChannelHeader",
-          "path": "middleware/add-channel.js"
+          "name": "AddChannelHeader",
+          "path": "middleware/add_channel.so"
         }
       ],
-      "driver": "otto"
+      "response": [
+        {
+          "name": "TransformResponse",
+          "path": "middleware/transform_response.so"
+        }
+      ],
+      "driver": "goplugin"
     },
     "active": true
   },
