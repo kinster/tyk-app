@@ -1,13 +1,14 @@
 pipeline {
   agent any
 
+  options { timestamps() }
+
   stages {
     stage('Docker version') {
       steps {
         sh '''
-          docker run --rm \
-            -v /var/run/docker.sock:/var/run/docker.sock \
-            docker:27-cli docker version
+          set -e
+          docker version
         '''
       }
     }
@@ -15,9 +16,8 @@ pipeline {
     stage('Compose version') {
       steps {
         sh '''
-          docker run --rm \
-            -v /var/run/docker.sock:/var/run/docker.sock \
-            docker:27-cli docker compose version
+          set -e
+          docker compose version
         '''
       }
     }
@@ -25,12 +25,17 @@ pipeline {
     stage('Deploy Backend') {
       steps {
         sh '''
-          docker run --rm \
-            -v /var/run/docker.sock:/var/run/docker.sock \
-            -v "$WORKSPACE:/work" \
-            -w /work \
-            docker:27-cli \
-            docker compose -f docker-compose.yml up -d --build backend
+          set -e
+          docker compose -f docker-compose.yml up -d --build backend
+        '''
+      }
+    }
+
+    stage('Show running containers') {
+      steps {
+        sh '''
+          set -e
+          docker ps
         '''
       }
     }
