@@ -1,9 +1,7 @@
 # Must use the same Go version as the tyk-gateway binary (1.22.6)
-FROM golang:1.22.6-alpine AS builder
-
-# CGO is required for -buildmode=plugin
-# binutils provides 'ld' linker needed by gcc on Alpine
-RUN apk add --no-cache gcc musl-dev binutils
+# Using Debian-based image (not alpine) as it has gcc/ld pre-installed
+# and avoids Alpine aarch64 linker path issues with CGO
+FROM golang:1.22.6 AS builder
 
 WORKDIR /build
 
