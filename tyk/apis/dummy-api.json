@@ -2,7 +2,7 @@
   "api_definition": {
     "name": "dummy-api",
     "api_id": "dummy-api-v1",
-    "org_id": "699c2a0c3a35a40001e4e2d6",
+    "org_id": "699c263627f00c0001198b93",
     "use_keyless": true,
     "proxy": {
       "target_url": "http://dummy-backend:3001",
