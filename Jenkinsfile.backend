@@ -6,8 +6,13 @@ pipeline {
     stage('Build & (Re)Deploy Backend via Docker Compose') {
       steps {
         sh '''
-          docker-compose -f docker-compose.yml up -d --build backend
-          docker ps --format "table {{.Names}}\\t{{.Image}}\\t{{.Ports}}\\t{{.Status}}"
+            docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v "$PWD:/work" \
+            -w /work \
+            docker:27-cli \
+            docker compose -f docker-compose.yml up -d --build backend
+            docker ps --format "table {{.Names}}\\t{{.Image}}\\t{{.Ports}}\\t{{.Status}}"
         '''
       }
     }
