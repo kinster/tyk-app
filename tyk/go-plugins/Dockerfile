@@ -2,7 +2,8 @@
 FROM golang:1.22.6-alpine AS builder
 
 # CGO is required for -buildmode=plugin
-RUN apk add --no-cache gcc musl-dev
+# binutils provides 'ld' linker needed by gcc on Alpine
+RUN apk add --no-cache gcc musl-dev binutils
 
 WORKDIR /build
 
