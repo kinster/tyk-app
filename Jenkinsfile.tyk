@@ -3,6 +3,7 @@ pipeline {
 
   environment {
     TYK_DASHBOARD_USER_KEY = credentials('tyk-dashboard-user-key')
+    TYK_DASHBOARD_ADMIN_SECRET = credentials('tyk-dashboard-admin-secret')
     DASHBOARD_URL = 'http://tyk-dashboard:3000'
     API_ID = 'dummy-api-v1'
   }
@@ -49,7 +50,7 @@ pipeline {
       steps {
         sh '''
           curl -s -X GET \
-            -H "authorization: ${TYK_DASHBOARD_USER_KEY}" \
+            -H "admin-auth: ${TYK_DASHBOARD_ADMIN_SECRET}" \
             ${DASHBOARD_URL}/api/system/reload
         '''
       }
