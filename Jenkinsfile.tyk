@@ -2,7 +2,7 @@ pipeline {
   agent any
 
   environment {
-    TYK_DASHBOARD_SECRET = credentials('tyk-dashboard-admin-secret')
+    TYK_DASHBOARD_USER_KEY = credentials('tyk-dashboard-user-key')
     DASHBOARD_URL = 'http://tyk-dashboard:3000'
     API_ID = 'dummy-api-v1'
   }
@@ -21,7 +21,7 @@ pipeline {
           echo "Deleting API if it exists..."
           HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
             -X DELETE \
-            -H "admin-auth: ${TYK_DASHBOARD_SECRET}" \
+            -H "authorization: ${TYK_DASHBOARD_USER_KEY}" \
             ${DASHBOARD_URL}/api/apis/${API_ID})
 
           echo "Delete returned: $HTTP_CODE"
@@ -35,7 +35,7 @@ pipeline {
           echo "Creating API in Tyk Dashboard..."
 
           RESPONSE=$(curl -s -X POST \
-            -H "admin-auth: ${TYK_DASHBOARD_SECRET}" \
+            -H "authorization: ${TYK_DASHBOARD_USER_KEY}" \
             -H "Content-Type: application/json" \
             ${DASHBOARD_URL}/api/apis \
             -d @tyk/apis/dummy-api.json)
@@ -49,7 +49,7 @@ pipeline {
       steps {
         sh '''
           curl -s -X GET \
-            -H "admin-auth: ${TYK_DASHBOARD_SECRET}" \
+            -H "authorization: ${TYK_DASHBOARD_USER_KEY}" \
             ${DASHBOARD_URL}/api/system/reload
         '''
       }
