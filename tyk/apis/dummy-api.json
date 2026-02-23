@@ -14,7 +14,21 @@
       "versions": {
         "Default": {
           "name": "Default",
-          "use_extended_paths": true
+          "use_extended_paths": true,
+          "extended_paths": {
+            "transform_response": [
+              {
+                "path": "hello",
+                "method": "GET",
+                "template_data": {
+                  "input_type": "json",
+                  "enable_session": false,
+                  "template_mode": "blob",
+                  "template_source": "eyJzdGF0dXMiOiAie3subWVzc2FnZX19IiwgImNoYW5uZWwiOiAie3suY2hhbm5lbFJlY2VpdmVkfX0iLCAicHJlZml4IjogInt7LnByZWZpeFJlY2VpdmVkfX0iLCAidHJhbnNmb3JtZWQiOiB0cnVlfQo="
+                }
+              }
+            ]
+          }
         }
       }
     },

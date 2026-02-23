@@ -21,6 +21,7 @@ pipeline {
         sh '''
           echo "Copying middleware to Tyk Gateway..."
           docker cp tyk/middleware/add-channel.js tyk-gateway:/opt/tyk-gateway/middleware/add-channel.js
+          docker cp tyk/middleware/transform-response.js tyk-gateway:/opt/tyk-gateway/middleware/transform-response.js
           echo "Middleware deployed."
         '''
       }
