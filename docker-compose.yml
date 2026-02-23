@@ -5,6 +5,8 @@ services:
     image: redis:7-alpine
     container_name: redis
     restart: unless-stopped
+    networks:
+      - tyk-net
 
   tyk-gateway:
     image: tykio/tyk-gateway:latest
@@ -16,7 +18,7 @@ services:
     environment:
       # Core config (env-style avoids shipping tyk.conf)
       TYK_GW_LISTENPORT: "8080"
-      TYK_GW_SECRET: "foo"                   # admin secret for /tyk/* endpoints
+      TYK_GW_SECRET: "352d20ee67be67f6340b4c0605b044b7"  # admin secret for /tyk/* endpoints
       TYK_GW_STORAGE_TYPE: "redis"
       TYK_GW_STORAGE_HOST: "redis"
       TYK_GW_STORAGE_PORT: "6379"
@@ -32,6 +34,8 @@ services:
     volumes:
       - tyk_apps:/opt/tyk-gateway/apps
       - tyk_mw:/opt/tyk-gateway/middleware
+    networks:
+      - tyk-net
 
   backend:
     build:
@@ -42,6 +46,8 @@ services:
       - PORT=3001
     ports:
       - "3030:3001"
+    networks:
+      - tyk-net
 
   jenkins:
     image: jenkins/jenkins:lts-jdk17
@@ -59,6 +65,12 @@ services:
       # Shared volumes so Jenkins can publish APIs to the Gateway
       - tyk_apps:/tyk/apps
       - tyk_mw:/tyk/middleware
+    networks:
+      - tyk-net
+
+networks:
+  tyk-net:
+    driver: bridge
 
 volumes:
   jenkins_home:

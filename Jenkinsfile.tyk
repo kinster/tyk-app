@@ -2,10 +2,8 @@ pipeline {
   agent any
 
   environment {
-    DASHBOARD_ADMIN_KEY = credentials('tyk-dashboard-admin-key')
-    TYK_GW_SECRET = credentials('tyk-gw-secret')
+    TYK_DASHBOARD_SECRET = credentials('tyk-dashboard-admin-secret')
     DASHBOARD_URL = 'http://tyk-dashboard:3000'
-    GATEWAY_URL = 'http://tyk-gateway:8080'
     API_ID = 'dummy-api-v1'
   }
 
@@ -13,45 +11,46 @@ pipeline {
 
   stages {
 
-    stage('Delete API from Dashboard') {
-        steps {
-          sh '''
-            echo "Deleting API if it exists..."
-            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
-            -X DELETE \
-            -H "authorization: ${DASHBOARD_ADMIN_KEY}" \
-            ${DASHBOARD_URL}/api/apis/${API_ID})
-
-            echo "Delete returned: $HTTP_CODE"
-            '''
-        }
-    }
-
     stage('Checkout') {
       steps { checkout scm }
     }
 
-    stage('Reload Gateway') {
-        steps {
-            sh '''
-            curl -s -X POST \
-                -H "authorization: ${DASHBOARD_ADMIN_KEY}" \
-                ${DASHBOARD_URL}/api/system/reload
-            '''
-        }
+    stage('Delete API from Dashboard') {
+      steps {
+        sh '''
+          echo "Deleting API if it exists..."
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X DELETE \
+            -H "admin-auth: ${TYK_DASHBOARD_SECRET}" \
+            ${DASHBOARD_URL}/api/apis/${API_ID})
+
+          echo "Delete returned: $HTTP_CODE"
+        '''
+      }
     }
 
-
-    stage('Create or Update API in Dashboard') {
+    stage('Create API in Dashboard') {
       steps {
         sh '''
           echo "Creating API in Tyk Dashboard..."
 
-          curl -s -X POST \
-            -H "authorization: ${DASHBOARD_ADMIN_KEY}" \
+          RESPONSE=$(curl -s -X POST \
+            -H "admin-auth: ${TYK_DASHBOARD_SECRET}" \
             -H "Content-Type: application/json" \
             ${DASHBOARD_URL}/api/apis \
-            -d @tyk/apis/dummy-api.json
+            -d @tyk/apis/dummy-api.json)
+
+          echo "Response: $RESPONSE"
+        '''
+      }
+    }
+
+    stage('Reload Gateway') {
+      steps {
+        sh '''
+          curl -s -X GET \
+            -H "admin-auth: ${TYK_DASHBOARD_SECRET}" \
+            ${DASHBOARD_URL}/api/system/reload
         '''
       }
     }
