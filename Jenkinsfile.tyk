@@ -16,6 +16,16 @@ pipeline {
       steps { checkout scm }
     }
 
+    stage('Deploy Middleware') {
+      steps {
+        sh '''
+          echo "Copying middleware to Tyk Gateway..."
+          docker cp tyk/middleware/add-channel.js tyk-gateway:/opt/tyk-gateway/middleware/add-channel.js
+          echo "Middleware deployed."
+        '''
+      }
+    }
+
     stage('Delete API from Dashboard') {
       steps {
         sh '''
