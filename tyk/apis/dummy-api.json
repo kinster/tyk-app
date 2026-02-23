@@ -21,11 +21,11 @@
     "custom_middleware": {
       "pre": [
         {
-          "name": "add-channel-header",
+          "name": "addChannelHeader",
           "path": "middleware/add-channel.js"
         }
       ],
-      "driver": "javascript"
+      "driver": "otto"
     },
     "active": true
   },
