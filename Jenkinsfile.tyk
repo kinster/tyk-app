@@ -40,6 +40,18 @@ pipeline {
       }
     }
 
+    stage('Clean Up Old APIs') {
+      steps {
+        sh '''
+          echo "Removing all duplicate dummy-api-v1 entries across all orgs..."
+          curl -s -X DELETE \
+            -H "admin-auth: ${TYK_DASHBOARD_ADMIN_SECRET}" \
+            ${DASHBOARD_URL}/admin/apis/dummy-api-v1 || true
+          echo "Cleanup done."
+        '''
+      }
+    }
+
     stage('Delete API from Dashboard') {
       steps {
         sh '''

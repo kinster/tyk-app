@@ -2,7 +2,7 @@
   "api_definition": {
     "name": "dummy-api",
     "api_id": "dummy-api-v1",
-    "org_id": "699c263627f00c0001198b93",
+    "org_id": "699834a0d5d08e0001ee1c98",
     "use_keyless": true,
     "proxy": {
       "target_url": "http://dummy-backend:3001",
@@ -22,13 +22,13 @@
       "pre": [
         {
           "name": "AddChannelHeader",
-          "path": "middleware/add_channel.so"
+          "path": "middleware/add_channel_v5.11.0_linux_arm64.so"
         }
       ],
       "response": [
         {
           "name": "TransformResponse",
-          "path": "middleware/transform_response.so"
+          "path": "middleware/transform_response_v5.11.0_linux_arm64.so"
         }
       ],
       "driver": "goplugin"
