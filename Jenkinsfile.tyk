@@ -24,20 +24,25 @@ pipeline {
 
           echo "Building Go plugins with tyk-plugin-compiler:v5.11.0..."
 
-          # Compile plugins - mounts source dir, outputs .so files back into same dir
+          # Compile plugins - each plugin in its own subdirectory
+          # Compiler copies all files from /plugin-source, builds, outputs .so back to /plugin-source
           docker run --rm \
             --platform linux/amd64 \
-            -v $(pwd)/tyk/middleware:/plugin-source \
-            tykio/tyk-plugin-compiler:v5.11.0 add_channel.so 0 linux arm64
+            -v $(pwd)/tyk/middleware/add_channel:/plugin-source \
+            tykio/tyk-plugin-compiler:v5.11.0 add_channel.so "" linux arm64
 
           docker run --rm \
             --platform linux/amd64 \
-            -v $(pwd)/tyk/middleware:/plugin-source \
-            tykio/tyk-plugin-compiler:v5.11.0 transform_response.so 0 linux arm64
+            -v $(pwd)/tyk/middleware/transform_response:/plugin-source \
+            tykio/tyk-plugin-compiler:v5.11.0 transform_response.so "" linux arm64
 
           echo "Copying compiled plugins to middleware volume..."
           docker run --rm \
-            -v $(pwd)/tyk/middleware:/src \
+            -v $(pwd)/tyk/middleware/add_channel:/src \
+            -v tyk_mw:/mw \
+            alpine sh -c "cp /src/*.so /mw/"
+          docker run --rm \
+            -v $(pwd)/tyk/middleware/transform_response:/src \
             -v tyk_mw:/mw \
             alpine sh -c "cp /src/*.so /mw/"
 
