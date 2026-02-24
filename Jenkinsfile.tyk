@@ -75,7 +75,7 @@ pipeline {
         sh '''
           curl -s -X GET \
             -H "admin-auth: ${TYK_DASHBOARD_ADMIN_SECRET}" \
-            ${DASHBOARD_URL}/api/system/reload
+            ${DASHBOARD_URL}/admin/system/reload
         '''
       }
     }
