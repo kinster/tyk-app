@@ -16,26 +16,25 @@ pipeline {
       steps { checkout scm }
     }
 
-    stage('Build Go Plugins') {
+    stage('Build and Deploy Go Plugins') {
       steps {
         sh '''
-          echo "Building Go plugins..."
-          docker build -t tyk-go-plugins tyk/middleware/
-          echo "Go plugins built."
-        '''
-      }
-    }
+          echo "Clearing old plugins from middleware volume..."
+          docker run --rm -v tyk_mw:/mw alpine sh -c "rm -f /mw/*.so"
 
-    stage('Deploy Middleware') {
-      steps {
-        sh '''
-          echo "Deploying Go plugins to Tyk Gateway..."
-          # Extract .so files from the build image into the gateway container
+          echo "Building Go plugins with tyk-plugin-compiler:v5.11.0..."
           docker run --rm \
-            -v tyk_mw:/mw \
-            tyk-go-plugins \
-            sh -c "cp /plugins/*.so /mw/"
-          echo "Go plugins deployed to middleware volume."
+            -v $(pwd)/tyk/middleware:/plugin-source \
+            -v tyk_mw:/plugin-source/build \
+            tykio/tyk-plugin-compiler:v5.11.0 add_channel.so
+
+          docker run --rm \
+            -v $(pwd)/tyk/middleware:/plugin-source \
+            -v tyk_mw:/plugin-source/build \
+            tykio/tyk-plugin-compiler:v5.11.0 transform_response.so
+
+          echo "Go plugins built and deployed to middleware volume."
+          docker run --rm -v tyk_mw:/mw alpine ls -la /mw/
         '''
       }
     }

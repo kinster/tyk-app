@@ -1,21 +1,9 @@
-# Must use Tyk's official plugin compiler matching the gateway version
-# This ensures Go version and ABI compatibility with the gateway binary
-FROM tykio/tyk-plugin-compiler:v5.11.0 AS builder
-
-WORKDIR /build
-
-# Copy module files first for layer caching
-COPY go.mod ./
-
-# Copy plugin source files
-COPY add_channel.go transform_response.go ./
-
-# Build both plugins using the Tyk plugin compiler
-# The compiler handles CGO and outputs versioned filenames automatically
-RUN go build -buildmode=plugin -o add_channel.so add_channel.go && \
-    go build -buildmode=plugin -o transform_response.so transform_response.go
-
-# Export stage - alpine has sh so docker run can copy .so files out
+# This Dockerfile is kept for reference only.
+# Go plugins are now built using the official Tyk plugin compiler:
+#   docker run --rm -v /path/to/middleware:/plugin-source \
+#     tykio/tyk-plugin-compiler:v5.11.0 plugin_name.so
+#
+# The compiler ensures ABI compatibility with the gateway binary.
+# See Jenkinsfile.tyk Build and Deploy Go Plugins stage for the active build.
 FROM alpine:3.20
-COPY --from=builder /build/add_channel.so /plugins/add_channel.so
-COPY --from=builder /build/transform_response.so /plugins/transform_response.so
+RUN echo "Use tyk-plugin-compiler instead. See Jenkinsfile.tyk."
