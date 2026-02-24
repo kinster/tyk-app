@@ -9,7 +9,7 @@ services:
       - tyk-net
 
   tyk-gateway:
-    image: tykio/tyk-gateway:latest
+    image: tykio/tyk-gateway-ee:${GATEWAY_VERSION:-v5.11.0}
     container_name: tyk-gateway
     depends_on:
       - redis
