@@ -24,27 +24,27 @@ pipeline {
 
           echo "Building Go plugins with tyk-plugin-compiler:v5.11.0..."
 
-          # Compile plugins - each plugin in its own subdirectory
-          # Compiler copies all files from /plugin-source, builds, outputs .so back to /plugin-source
+          # Jenkins workspace lives inside a Docker named volume (jenkins_jenkins_home),
+          # so $(pwd) is not a host path - use --volumes-from to share the workspace.
+          JENKINS_CONTAINER=$(docker ps --filter "name=jenkins" --format "{{.ID}}" | head -1)
+
           docker run --rm \
             --platform linux/amd64 \
-            -v $(pwd)/tyk/middleware/add_channel:/plugin-source \
+            --volumes-from $JENKINS_CONTAINER \
+            -e PLUGIN_SOURCE_PATH=$(pwd)/tyk/middleware/add_channel \
             tykio/tyk-plugin-compiler:v5.11.0 add_channel.so "" linux arm64
 
           docker run --rm \
             --platform linux/amd64 \
-            -v $(pwd)/tyk/middleware/transform_response:/plugin-source \
+            --volumes-from $JENKINS_CONTAINER \
+            -e PLUGIN_SOURCE_PATH=$(pwd)/tyk/middleware/transform_response \
             tykio/tyk-plugin-compiler:v5.11.0 transform_response.so "" linux arm64
 
           echo "Copying compiled plugins to middleware volume..."
           docker run --rm \
-            -v $(pwd)/tyk/middleware/add_channel:/src \
+            --volumes-from $JENKINS_CONTAINER \
             -v tyk_mw:/mw \
-            alpine sh -c "cp /src/*.so /mw/"
-          docker run --rm \
-            -v $(pwd)/tyk/middleware/transform_response:/src \
-            -v tyk_mw:/mw \
-            alpine sh -c "cp /src/*.so /mw/"
+            alpine sh -c "cp $(pwd)/tyk/middleware/add_channel/*.so /mw/ && cp $(pwd)/tyk/middleware/transform_response/*.so /mw/"
 
           echo "Go plugins built and deployed to middleware volume."
           docker run --rm -v tyk_mw:/mw alpine ls -la /mw/
