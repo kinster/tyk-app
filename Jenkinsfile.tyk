@@ -20,7 +20,7 @@ pipeline {
       steps {
         sh '''
           echo "Building Go plugins..."
-          docker build -t tyk-go-plugins tyk/go-plugins/
+          docker build -t tyk-go-plugins tyk/middleware/
           echo "Go plugins built."
         '''
       }
