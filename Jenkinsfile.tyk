@@ -71,7 +71,7 @@ pipeline {
           HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
             -X DELETE \
             -H "authorization: ${TYK_DASHBOARD_USER_KEY}" \
-            ${DASHBOARD_URL}/api/apis/${API_ID})
+            ${DASHBOARD_URL}/api/apis/${API_ID}) || true
 
           echo "Delete returned: $HTTP_CODE"
         '''
