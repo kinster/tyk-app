@@ -1,3 +1,3 @@
-module github.com/kinster/tyk-app/go-plugins
+module github.com/kinster/tyk-app/add-channel-plugin
 
 go 1.22.6
