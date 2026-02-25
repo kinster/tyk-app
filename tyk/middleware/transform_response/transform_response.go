@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 )
@@ -58,5 +59,6 @@ func TransformResponse(rw http.ResponseWriter, res *http.Response, req *http.Req
 
 	res.Body = io.NopCloser(bytes.NewBuffer(newBody))
 	res.Header.Set("Content-Type", "application/json")
+	res.Header.Set("Content-Length", fmt.Sprintf("%d", len(newBody)))
 	res.ContentLength = int64(len(newBody))
 }
