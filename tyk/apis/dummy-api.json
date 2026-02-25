@@ -22,13 +22,13 @@
       "pre": [
         {
           "name": "AddChannelHeader",
-          "path": "middleware/add_channel.so"
+          "path": "middleware/add_channel_v5.11.0_linux_arm64.so"
         }
       ],
       "response": [
         {
           "name": "TransformResponse",
-          "path": "middleware/transform_response.so"
+          "path": "middleware/transform_response_v5.11.0_linux_arm64.so"
         }
       ],
       "driver": "goplugin"

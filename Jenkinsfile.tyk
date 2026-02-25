@@ -97,9 +97,11 @@ pipeline {
     stage('Reload Gateway') {
       steps {
         sh '''
-          curl -s -X GET \
-            -H "admin-auth: ${TYK_DASHBOARD_ADMIN_SECRET}" \
-            ${DASHBOARD_URL}/admin/system/reload
+          echo "Force-recreating gateway to clear Go plugin loader cache..."
+          docker compose \
+            -f /Users/kinman/projects/tyk-pro-docker-demo/docker-compose.yml \
+            up -d --force-recreate tyk-gateway
+          echo "Gateway recreated."
         '''
       }
     }
