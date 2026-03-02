@@ -2,7 +2,6 @@ pipeline {
   agent any
 
   environment {
-    TYK_DASHBOARD_USER_KEY = credentials('tyk-dashboard-user-key')
     TYK_DASHBOARD_ADMIN_SECRET = credentials('tyk-dashboard-admin-secret')
     DASHBOARD_URL = 'http://tyk-dashboard:3000'
     API_ID = 'dummy-api-v1'
@@ -14,6 +13,21 @@ pipeline {
 
     stage('Checkout') {
       steps { checkout scm }
+    }
+
+    stage('Get Dashboard Credentials') {
+      steps {
+        script {
+          def row = sh(returnStdout: true, script: '''
+            docker exec tyk-postgres psql -U postgres -d tyk_analytics \
+              -t -c "SELECT accesskey, orgid FROM tyk_analytics_users WHERE emailaddress='dev@tyk.io' ORDER BY created_at DESC LIMIT 1;"
+          ''').trim()
+          def parts = row.split('\\|')
+          env.DASHBOARD_USER_KEY = parts[0].trim()
+          env.DASHBOARD_ORG_ID   = parts[1].trim()
+          echo "Using org: ${env.DASHBOARD_ORG_ID}"
+        }
+      }
     }
 
     stage('Build and Deploy Go Plugins') {
@@ -70,7 +84,7 @@ pipeline {
           echo "Deleting API if it exists..."
           HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
             -X DELETE \
-            -H "authorization: ${TYK_DASHBOARD_USER_KEY}" \
+            -H "authorization: ${DASHBOARD_USER_KEY}" \
             ${DASHBOARD_URL}/api/apis/${API_ID}) || true
 
           echo "Delete returned: $HTTP_CODE"
@@ -83,11 +97,14 @@ pipeline {
         sh '''
           echo "Creating API in Tyk Dashboard..."
 
+          sed "s/\"org_id\": \"[^\"]*\"/\"org_id\": \"${DASHBOARD_ORG_ID}\"/g" \
+            tyk/apis/dummy-api.json > /tmp/dummy-api-deploy.json
+
           RESPONSE=$(curl -s -X POST \
-            -H "authorization: ${TYK_DASHBOARD_USER_KEY}" \
+            -H "authorization: ${DASHBOARD_USER_KEY}" \
             -H "Content-Type: application/json" \
             ${DASHBOARD_URL}/api/apis \
-            -d @tyk/apis/dummy-api.json)
+            -d @/tmp/dummy-api-deploy.json)
 
           echo "Response: $RESPONSE"
         '''
@@ -98,11 +115,16 @@ pipeline {
       steps {
         sh '''
           echo "Creating dummy-api policy..."
+
+          sed "s/\"org_id\": \"[^\"]*\"/\"org_id\": \"${DASHBOARD_ORG_ID}\"/g" \
+            tyk/policies/dummy-api-policy.json > /tmp/dummy-api-policy-deploy.json
+
           POLICY_RESPONSE=$(curl -s -X POST \
-            -H "authorization: ${TYK_DASHBOARD_USER_KEY}" \
+            -H "authorization: ${DASHBOARD_USER_KEY}" \
             -H "Content-Type: application/json" \
             ${DASHBOARD_URL}/api/portal/policies \
-            -d @tyk/policies/dummy-api-policy.json)
+            -d @/tmp/dummy-api-policy-deploy.json)
+
           echo "Policy response: $POLICY_RESPONSE"
         '''
       }
