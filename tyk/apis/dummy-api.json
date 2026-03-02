@@ -2,7 +2,7 @@
   "api_definition": {
     "name": "dummy-api",
     "api_id": "dummy-api-v1",
-    "org_id": "699834a0d5d08e0001ee1c98",
+    "org_id": "699dec5ab293a10001817fa2",
     "use_keyless": false,
     "enable_jwt": true,
     "jwt_source": "https://cognito-idp.eu-west-1.amazonaws.com/eu-west-1_7Y5RCEQjX/.well-known/jwks.json",
