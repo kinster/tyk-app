@@ -3,7 +3,7 @@
   "files": [
     { "file": "./apis/dummy-api.json" }
   ],
-  "policies": [],
+  "policies": [{ "file": "./policies/dummy-api-policy.json" }],
   "assets": [
     { "file": "./middleware/add-channel.js" }
   ]

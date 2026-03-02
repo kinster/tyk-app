@@ -94,6 +94,20 @@ pipeline {
       }
     }
 
+    stage('Create Policy') {
+      steps {
+        sh '''
+          echo "Creating dummy-api policy..."
+          POLICY_RESPONSE=$(curl -s -X POST \
+            -H "authorization: ${TYK_DASHBOARD_USER_KEY}" \
+            -H "Content-Type: application/json" \
+            ${DASHBOARD_URL}/api/portal/policies \
+            -d @tyk/policies/dummy-api-policy.json)
+          echo "Policy response: $POLICY_RESPONSE"
+        '''
+      }
+    }
+
     stage('Reload Gateway') {
       steps {
         sh '''

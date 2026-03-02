@@ -3,7 +3,12 @@
     "name": "dummy-api",
     "api_id": "dummy-api-v1",
     "org_id": "699834a0d5d08e0001ee1c98",
-    "use_keyless": true,
+    "use_keyless": false,
+    "enable_jwt": true,
+    "jwt_source": "https://cognito-idp.eu-west-1.amazonaws.com/eu-west-1_7Y5RCEQjX/.well-known/jwks.json",
+    "jwt_signing_method": "rsa",
+    "jwt_identity_base_field": "sub",
+    "jwt_default_policies": [],
     "proxy": {
       "target_url": "http://dummy-backend:3001",
       "listen_path": "/dummy-proxy/",
