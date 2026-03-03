@@ -92,12 +92,65 @@ pipeline {
       }
     }
 
+    stage('Delete Policy from Dashboard') {
+      steps {
+        sh '''
+          echo "Looking up existing Dummy API Policy..."
+          POLICY_LIST=$(curl -s \
+            -H "authorization: ${DASHBOARD_USER_KEY}" \
+            ${DASHBOARD_URL}/api/portal/policies)
+
+          OLD_POLICY_ID=$(echo "$POLICY_LIST" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+for p in data.get('Data', []):
+    if p.get('name') == 'Dummy API Policy':
+        print(p['_id'])
+        break
+" 2>/dev/null || true)
+
+          if [ -n "$OLD_POLICY_ID" ]; then
+            curl -s -X DELETE \
+              -H "authorization: ${DASHBOARD_USER_KEY}" \
+              ${DASHBOARD_URL}/api/portal/policies/${OLD_POLICY_ID} || true
+            echo "Deleted policy: $OLD_POLICY_ID"
+          else
+            echo "No existing policy found, skipping delete."
+          fi
+        '''
+      }
+    }
+
+    stage('Create Policy') {
+      steps {
+        script {
+          sh '''
+            sed "s/DYNAMIC_ORG_ID/${DASHBOARD_ORG_ID}/g" \
+              tyk/policies/dummy-api-policy.json > /tmp/dummy-api-policy-deploy.json
+
+            curl -s -X POST \
+              -H "authorization: ${DASHBOARD_USER_KEY}" \
+              -H "Content-Type: application/json" \
+              ${DASHBOARD_URL}/api/portal/policies \
+              -d @/tmp/dummy-api-policy-deploy.json > /tmp/policy-response.json
+
+            echo "Policy response:"
+            cat /tmp/policy-response.json
+          '''
+          env.POLICY_ID = sh(returnStdout: true, script: '''
+            python3 -c "import json; print(json.load(open('/tmp/policy-response.json'))['Meta'])"
+          ''').trim()
+          echo "Policy ID: ${env.POLICY_ID}"
+        }
+      }
+    }
+
     stage('Create API in Dashboard') {
       steps {
         sh '''
           echo "Creating API in Tyk Dashboard..."
 
-          sed "s/DYNAMIC_ORG_ID/${DASHBOARD_ORG_ID}/g" \
+          sed "s/DYNAMIC_ORG_ID/${DASHBOARD_ORG_ID}/g; s/DYNAMIC_POLICY_ID/${POLICY_ID}/g" \
             tyk/apis/dummy-api.json > /tmp/dummy-api-deploy.json
 
           RESPONSE=$(curl -s -X POST \
@@ -107,25 +160,6 @@ pipeline {
             -d @/tmp/dummy-api-deploy.json)
 
           echo "Response: $RESPONSE"
-        '''
-      }
-    }
-
-    stage('Create Policy') {
-      steps {
-        sh '''
-          echo "Creating dummy-api policy..."
-
-          sed "s/DYNAMIC_ORG_ID/${DASHBOARD_ORG_ID}/g" \
-            tyk/policies/dummy-api-policy.json > /tmp/dummy-api-policy-deploy.json
-
-          POLICY_RESPONSE=$(curl -s -X POST \
-            -H "authorization: ${DASHBOARD_USER_KEY}" \
-            -H "Content-Type: application/json" \
-            ${DASHBOARD_URL}/api/portal/policies \
-            -d @/tmp/dummy-api-policy-deploy.json)
-
-          echo "Policy response: $POLICY_RESPONSE"
         '''
       }
     }

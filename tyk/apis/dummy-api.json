@@ -8,7 +8,7 @@
     "jwt_source": "https://hermes-df-dev.eu.auth0.com/.well-known/jwks.json",
     "jwt_signing_method": "rsa",
     "jwt_identity_base_field": "sub",
-    "jwt_default_policies": [],
+    "jwt_default_policies": ["DYNAMIC_POLICY_ID"],
     "proxy": {
       "target_url": "http://dummy-backend:3001",
       "listen_path": "/dummy-proxy/",
