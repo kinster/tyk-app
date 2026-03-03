@@ -20,7 +20,7 @@ pipeline {
         script {
           def row = sh(returnStdout: true, script: '''
             docker exec tyk-postgres psql -U postgres -d tyk_analytics \
-              -t -c "SELECT accesskey, orgid FROM tyk_analytics_users WHERE emailaddress='dev@tyk.io' ORDER BY created_at DESC LIMIT 1;"
+              -t -c "SELECT accesskey, orgid FROM tyk_analytics_users WHERE emailaddress='dev@tyk.io' ORDER BY lastlogindate DESC LIMIT 1;"
           ''').trim()
           def parts = row.split('\\|')
           env.DASHBOARD_USER_KEY = parts[0].trim()
