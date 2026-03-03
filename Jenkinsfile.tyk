@@ -100,8 +100,8 @@ pipeline {
             -H "authorization: ${DASHBOARD_USER_KEY}" \
             ${DASHBOARD_URL}/api/portal/policies > /tmp/policy-list.json
 
-          OLD_POLICY_ID=$(grep -oP '"_id":"[^"]+","id":"[^"]*","name":"Dummy API Policy"' /tmp/policy-list.json \
-            | grep -oP '"_id":"\K[^"]+')
+          OLD_POLICY_ID=$(grep -o '"_id":"[^"]*","id":"[^"]*","name":"Dummy API Policy"' /tmp/policy-list.json \
+            | grep -o '"_id":"[^"]*"' | cut -d'"' -f4)
 
           if [ -n "$OLD_POLICY_ID" ]; then
             curl -s -X DELETE \
@@ -132,7 +132,7 @@ pipeline {
             cat /tmp/policy-response.json
           '''
           env.POLICY_ID = sh(returnStdout: true, script: '''
-            grep -oP '"Meta":"\K[^"]+' /tmp/policy-response.json
+            grep -o '"Meta":"[^"]*"' /tmp/policy-response.json | cut -d'"' -f4
           ''').trim()
           echo "Policy ID: ${env.POLICY_ID}"
         }
