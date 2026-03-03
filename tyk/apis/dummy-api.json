@@ -5,7 +5,7 @@
     "org_id": "DYNAMIC_ORG_ID",
     "use_keyless": false,
     "enable_jwt": true,
-    "jwt_source": "https://cognito-idp.eu-west-1.amazonaws.com/eu-west-1_7Y5RCEQjX/.well-known/jwks.json",
+    "jwt_source": "https://hermes-df-dev.eu.auth0.com/.well-known/jwks.json",
     "jwt_signing_method": "rsa",
     "jwt_identity_base_field": "sub",
     "jwt_default_policies": [],

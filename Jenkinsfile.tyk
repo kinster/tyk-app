@@ -97,7 +97,7 @@ pipeline {
         sh '''
           echo "Creating API in Tyk Dashboard..."
 
-          sed "s/\"org_id\": \"[^\"]*\"/\"org_id\": \"${DASHBOARD_ORG_ID}\"/g" \
+          sed "s/DYNAMIC_ORG_ID/${DASHBOARD_ORG_ID}/g" \
             tyk/apis/dummy-api.json > /tmp/dummy-api-deploy.json
 
           RESPONSE=$(curl -s -X POST \
@@ -116,7 +116,7 @@ pipeline {
         sh '''
           echo "Creating dummy-api policy..."
 
-          sed "s/\"org_id\": \"[^\"]*\"/\"org_id\": \"${DASHBOARD_ORG_ID}\"/g" \
+          sed "s/DYNAMIC_ORG_ID/${DASHBOARD_ORG_ID}/g" \
             tyk/policies/dummy-api-policy.json > /tmp/dummy-api-policy-deploy.json
 
           POLICY_RESPONSE=$(curl -s -X POST \
