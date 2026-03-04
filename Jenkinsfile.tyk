@@ -132,7 +132,7 @@ pipeline {
             cat /tmp/policy-response.json
           '''
           env.POLICY_ID = sh(returnStdout: true, script: '''
-            grep -o '"Meta":"[^"]*"' /tmp/policy-response.json | cut -d'"' -f4
+            grep -o '"Message":"[^"]*"' /tmp/policy-response.json | cut -d'"' -f4
           ''').trim()
           echo "Policy ID: ${env.POLICY_ID}"
         }
