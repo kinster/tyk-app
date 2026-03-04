@@ -5,7 +5,7 @@
     "org_id": "DYNAMIC_ORG_ID",
     "use_keyless": false,
     "enable_jwt": true,
-    "jwt_source": "https://hermes-df-dev.eu.auth0.com/.well-known/jwks.json",
+    "jwt_source": "aHR0cHM6Ly9oZXJtZXMtZGYtZGV2LmV1LmF1dGgwLmNvbS8ud2VsbC1rbm93bi9qd2tzLmpzb24=",
     "jwt_signing_method": "rsa",
     "jwt_identity_base_field": "sub",
     "jwt_default_policies": ["DYNAMIC_POLICY_ID"],
