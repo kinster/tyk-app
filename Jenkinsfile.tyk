@@ -3,6 +3,7 @@ pipeline {
 
   environment {
     TYK_DASHBOARD_ADMIN_SECRET = credentials('tyk-dashboard-admin-secret')
+    TYK_GW_SECRET = credentials('tyk-gw-secret')
     DASHBOARD_URL = 'http://tyk-dashboard:3000'
     API_ID = 'dummy-api-v1'
   }
@@ -163,8 +164,8 @@ pipeline {
         sh '''
           echo "Reloading gateway API definitions..."
           curl -s -X GET \
-            -H "admin-auth: ${TYK_DASHBOARD_ADMIN_SECRET}" \
-            http://tyk-dashboard:3000/admin/system/reload
+            -H "x-tyk-authorization: ${TYK_GW_SECRET}" \
+            http://tyk-gateway:8080/tyk/reload/group
           echo "Reload triggered."
         '''
       }
