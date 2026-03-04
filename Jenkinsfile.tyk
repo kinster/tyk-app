@@ -2,7 +2,6 @@ pipeline {
   agent any
 
   environment {
-    TYK_DASHBOARD_ADMIN_SECRET = credentials('tyk-dashboard-admin-secret')
     TYK_GW_SECRET = credentials('tyk-gw-secret')
     DASHBOARD_URL = 'http://tyk-dashboard:3000'
     API_ID = 'dummy-api-v1'
@@ -63,18 +62,6 @@ pipeline {
 
           echo "Go plugins built and deployed to middleware volume."
           docker run --rm -v tyk_mw:/mw alpine ls -la /mw/
-        '''
-      }
-    }
-
-    stage('Clean Up Old APIs') {
-      steps {
-        sh '''
-          echo "Removing all duplicate dummy-api-v1 entries across all orgs..."
-          curl -s -X DELETE \
-            -H "admin-auth: ${TYK_DASHBOARD_ADMIN_SECRET}" \
-            ${DASHBOARD_URL}/admin/apis/dummy-api-v1 || true
-          echo "Cleanup done."
         '''
       }
     }
