@@ -73,7 +73,7 @@ pipeline {
           HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
             -X DELETE \
             -H "authorization: ${DASHBOARD_USER_KEY}" \
-            ${DASHBOARD_URL}/api/apis/${API_ID}) || true
+            ${DASHBOARD_URL}/api/oas/apis/${API_ID}) || true
 
           echo "Delete returned: $HTTP_CODE"
         '''
@@ -138,7 +138,7 @@ pipeline {
           RESPONSE=$(curl -s -X POST \
             -H "authorization: ${DASHBOARD_USER_KEY}" \
             -H "Content-Type: application/json" \
-            ${DASHBOARD_URL}/api/apis \
+            ${DASHBOARD_URL}/api/oas/apis \
             -d @/tmp/dummy-api-deploy.json)
 
           echo "Response: $RESPONSE"

@@ -1,5 +1,5 @@
 {
-  "type": "apidef",
+  "type": "oas",
   "files": [
     { "file": "./apis/dummy-api.json" }
   ],

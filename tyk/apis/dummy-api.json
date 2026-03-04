@@ -1,45 +1,68 @@
 {
-  "api_definition": {
-    "name": "dummy-api",
-    "api_id": "dummy-api-v1",
-    "org_id": "DYNAMIC_ORG_ID",
-    "use_keyless": false,
-    "enable_jwt": true,
-    "jwt_source": "aHR0cHM6Ly9oZXJtZXMtZGYtZGV2LmV1LmF1dGgwLmNvbS8ud2VsbC1rbm93bi9qd2tzLmpzb24=",
-    "jwt_signing_method": "rsa",
-    "jwt_identity_base_field": "sub",
-    "jwt_default_policies": ["DYNAMIC_POLICY_ID"],
-    "proxy": {
-      "target_url": "http://dummy-backend:3001",
-      "listen_path": "/dummy-proxy/",
-      "strip_listen_path": true
+  "openapi": "3.0.3",
+  "info": {
+    "title": "dummy-api",
+    "version": "1.0.0"
+  },
+  "paths": {},
+  "components": {
+    "securitySchemes": {
+      "jwtAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "security": [{ "jwtAuth": [] }],
+  "x-tyk-api-gateway": {
+    "info": {
+      "name": "dummy-api",
+      "id": "dummy-api-v1",
+      "orgId": "DYNAMIC_ORG_ID",
+      "state": { "active": true }
     },
-    "version_data": {
-      "not_versioned": true,
-      "versions": {
-        "Default": {
-          "name": "Default",
-          "use_extended_paths": true
+    "upstream": {
+      "url": "http://dummy-backend:3001"
+    },
+    "server": {
+      "listenPath": {
+        "value": "/dummy-proxy/",
+        "strip": true
+      },
+      "authentication": {
+        "enabled": true,
+        "securitySchemes": {
+          "jwtAuth": {
+            "enabled": true,
+            "signingMethod": "rsa",
+            "source": "aHR0cHM6Ly9oZXJtZXMtZGYtZGV2LmV1LmF1dGgwLmNvbS8ud2VsbC1rbm93bi9qd2tzLmpzb24=",
+            "identityBaseField": "sub",
+            "defaultPolicies": ["DYNAMIC_POLICY_ID"]
+          }
         }
       }
     },
-    "custom_middleware": {
-      "pre": [
-        {
-          "name": "AddChannelHeader",
-          "path": "middleware/add_channel_v5.11.0_linux_arm64.so"
-        }
-      ],
-      "response": [
-        {
-          "name": "TransformResponse",
-          "path": "middleware/transform_response_v5.11.0_linux_arm64.so"
-        }
-      ],
-      "driver": "goplugin"
-    },
-    "active": true
-  },
-  "hook_references": [],
-  "is_site": false
+    "middleware": {
+      "global": {
+        "pluginConfig": {
+          "driver": "goplugin"
+        },
+        "prePlugins": [
+          {
+            "name": "AddChannelHeader",
+            "path": "middleware/add_channel_v5.11.0_linux_arm64.so",
+            "rawBodyOnly": false
+          }
+        ],
+        "responsePlugins": [
+          {
+            "name": "TransformResponse",
+            "path": "middleware/transform_response_v5.11.0_linux_arm64.so",
+            "rawBodyOnly": false
+          }
+        ]
+      }
+    }
+  }
 }
