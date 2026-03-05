@@ -73,7 +73,7 @@ pipeline {
           HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
             -X DELETE \
             -H "authorization: ${DASHBOARD_USER_KEY}" \
-            ${DASHBOARD_URL}/api/oas/apis/${API_ID}) || true
+            ${DASHBOARD_URL}/api/apis/${API_ID}) || true
 
           echo "Delete returned: $HTTP_CODE"
         '''
@@ -130,18 +130,28 @@ pipeline {
     stage('Create API in Dashboard') {
       steps {
         sh '''
-          echo "Creating API in Tyk Dashboard..."
+          echo "Creating API in Tyk Dashboard (classic endpoint)..."
 
           sed "s/DYNAMIC_ORG_ID/${DASHBOARD_ORG_ID}/g; s/DYNAMIC_POLICY_ID/${POLICY_ID}/g" \
-            tyk/apis/dummy-api.json > /tmp/dummy-api-deploy.json
+            tyk/apis/dummy-api-classic.json > /tmp/dummy-api-classic-deploy.json
 
           RESPONSE=$(curl -s -X POST \
             -H "authorization: ${DASHBOARD_USER_KEY}" \
             -H "Content-Type: application/json" \
-            ${DASHBOARD_URL}/api/oas/apis \
-            -d @/tmp/dummy-api-deploy.json)
+            ${DASHBOARD_URL}/api/apis \
+            -d @/tmp/dummy-api-classic-deploy.json)
 
           echo "Response: $RESPONSE"
+
+          echo "Rendering OAS definition..."
+          sed "s/DYNAMIC_ORG_ID/${DASHBOARD_ORG_ID}/g; s/DYNAMIC_POLICY_ID/${POLICY_ID}/g" \
+            tyk/apis/dummy-api.json > /tmp/dummy-api-oas-deploy.json
+
+          echo "Marking API as OAS in database..."
+          OAS_B64=$(cat /tmp/dummy-api-oas-deploy.json | base64 | tr -d '\n')
+          docker exec tyk-postgres psql -U postgres -d tyk_analytics \
+            -c "UPDATE tyk_apis SET is_oas=true, oas_doc=convert_from(decode('${OAS_B64}', 'base64'), 'UTF8')::json WHERE api_id='dummy-api-v1';"
+          echo "API marked as OAS."
         '''
       }
     }
