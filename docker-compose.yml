@@ -48,6 +48,7 @@ services:
       - "3030:3001"
     networks:
       - tyk-net
+      - tyk-pro-docker-demo-ee_tyk
 
   jenkins:
     image: jenkins/jenkins:lts-jdk17
@@ -71,6 +72,8 @@ services:
 networks:
   tyk-net:
     driver: bridge
+  tyk-pro-docker-demo-ee_tyk:
+    external: true
 
 volumes:
   jenkins_home:
