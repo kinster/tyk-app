@@ -22,11 +22,11 @@ pipeline {
       }
     }
 
-    stage('Deploy Backend') {
+    stage('Deploy Backends') {
       steps {
         sh '''
           set -e
-          docker compose -f docker-compose.yml up -d --build backend
+          docker compose -f docker-compose.yml up -d --build backend backend2
         '''
       }
     }
