@@ -1,0 +1,23 @@
+{
+  "name": "Dummy API 2 Policy",
+  "active": true,
+  "is_inactive": false,
+  "org_id": "DYNAMIC_ORG_ID",
+  "rate": 1000,
+  "per": 60,
+  "quota_max": -1,
+  "quota_renewal_rate": 3600,
+  "throttle_interval": -1,
+  "throttle_retry_limit": -1,
+  "max_query_depth": -1,
+  "access_rights": {
+    "dummy-api-2-v1": {
+      "api_id": "dummy-api-2-v1",
+      "api_name": "dummy-api-2",
+      "versions": ["Default"],
+      "allowed_urls": [],
+      "limit": null,
+      "allowance_scope": ""
+    }
+  }
+}

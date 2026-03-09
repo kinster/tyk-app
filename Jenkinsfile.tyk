@@ -2,10 +2,9 @@ pipeline {
   agent any
 
   environment {
-    TYK_GW_SECRET = credentials('tyk-gw-secret')
-    DASHBOARD_URL = 'http://tyk-dashboard:3000'
-    API_ID = 'dummy-api-v1'
-    SERVICE = 'dummy'
+    TYK_GW_SECRET    = credentials('tyk-gw-secret')
+    DASHBOARD_URL    = 'http://tyk-dashboard:3000'
+    COMPILER_VERSION = 'v5.11.0'
   }
 
   options { timestamps() }
@@ -14,7 +13,7 @@ pipeline {
     choice(
       name: 'ENVIRONMENT',
       choices: ['dev', 'sit', 'preprod', 'prod'],
-      description: 'Target environment — combined with service name to select Jenkins credential (jwks-url-{service}-{env})'
+      description: 'Target environment — used to resolve per-service JWKS credentials (jwks-url-{service}-{env})'
     )
   }
 
@@ -22,17 +21,6 @@ pipeline {
 
     stage('Checkout') {
       steps { checkout scm }
-    }
-
-    stage('Resolve Environment Config') {
-      steps {
-        script {
-          withCredentials([string(credentialsId: "jwks-url-${env.SERVICE}-${params.ENVIRONMENT}", variable: 'JWKS_URL_PLAIN')]) {
-            env.JWKS_URL_B64 = sh(returnStdout: true, script: 'printf "%s" "$JWKS_URL_PLAIN" | base64 -w 0').trim()
-          }
-          echo "Environment: ${params.ENVIRONMENT}"
-        }
-      }
     }
 
     stage('Get Dashboard Credentials') {
@@ -56,113 +44,125 @@ pipeline {
           echo "Clearing old plugins from middleware volume..."
           docker run --rm -v tyk_mw:/mw alpine sh -c "rm -f /mw/*.so"
 
-          echo "Building Go plugins with tyk-plugin-compiler:v5.11.0..."
-
-          # Jenkins workspace lives inside a Docker named volume (jenkins_jenkins_home),
-          # so $(pwd) is not a host path - use --volumes-from to share the workspace.
+          echo "Building all Go plugins with tyk-plugin-compiler:${COMPILER_VERSION}..."
           JENKINS_CONTAINER=$(docker ps --filter "name=jenkins" --format "{{.ID}}" | head -1)
 
-          docker run --rm \
-            --platform linux/amd64 \
-            --volumes-from $JENKINS_CONTAINER \
-            -e PLUGIN_SOURCE_PATH=$(pwd)/tyk-config/middleware/dummy/golang/add_channel \
-            tykio/tyk-plugin-compiler:v5.11.0 add_channel.so "" linux arm64
-
-          docker run --rm \
-            --platform linux/amd64 \
-            --volumes-from $JENKINS_CONTAINER \
-            -e PLUGIN_SOURCE_PATH=$(pwd)/tyk-config/middleware/dummy/golang/transform_response \
-            tykio/tyk-plugin-compiler:v5.11.0 transform_response.so "" linux arm64
+          find tyk-config/middleware -name "go.mod" | while read gomod; do
+            plugin_dir=$(dirname "$gomod")
+            plugin_name=$(basename "$plugin_dir")
+            echo "--- Compiling: $plugin_name ---"
+            docker run --rm \
+              --platform linux/amd64 \
+              --volumes-from $JENKINS_CONTAINER \
+              -e PLUGIN_SOURCE_PATH=$(pwd)/$plugin_dir \
+              tykio/tyk-plugin-compiler:${COMPILER_VERSION} ${plugin_name}.so "" linux arm64
+          done
 
           echo "Copying compiled plugins to middleware volume..."
           docker run --rm \
             --volumes-from $JENKINS_CONTAINER \
             -v tyk_mw:/mw \
-            alpine sh -c "cp $(pwd)/tyk-config/middleware/dummy/golang/add_channel/*.so /mw/ && cp $(pwd)/tyk-config/middleware/dummy/golang/transform_response/*.so /mw/"
+            alpine sh -c "find $(pwd)/tyk-config/middleware -name '*.so' -exec cp {} /mw/ \\;"
 
-          echo "Go plugins built and deployed to middleware volume."
+          echo "Middleware volume contents:"
           docker run --rm -v tyk_mw:/mw alpine ls -la /mw/
         '''
       }
     }
 
-    stage('Delete API from Dashboard') {
-      steps {
-        sh '''
-          echo "Deleting API if it exists..."
-          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
-            -X DELETE \
-            -H "authorization: ${DASHBOARD_USER_KEY}" \
-            ${DASHBOARD_URL}/api/apis/${API_ID}) || true
-
-          echo "Delete returned: $HTTP_CODE"
-        '''
-      }
-    }
-
-    stage('Delete Policy from Dashboard') {
-      steps {
-        sh '''
-          echo "Looking up existing Dummy API Policy..."
-          curl -s \
-            -H "authorization: ${DASHBOARD_USER_KEY}" \
-            ${DASHBOARD_URL}/api/portal/policies > /tmp/policy-list.json
-
-          OLD_POLICY_ID=$(grep -o '"_id":"[^"]*","id":"[^"]*","name":"Dummy API Policy"' /tmp/policy-list.json \
-            | grep -o '"_id":"[^"]*"' | cut -d'"' -f4)
-
-          if [ -n "$OLD_POLICY_ID" ]; then
-            curl -s -X DELETE \
-              -H "authorization: ${DASHBOARD_USER_KEY}" \
-              ${DASHBOARD_URL}/api/portal/policies/${OLD_POLICY_ID} || true
-            echo "Deleted policy: $OLD_POLICY_ID"
-          else
-            echo "No existing policy found, skipping delete."
-          fi
-        '''
-      }
-    }
-
-    stage('Create Policy') {
+    stage('Deploy APIs') {
       steps {
         script {
-          sh '''
-            sed "s/DYNAMIC_ORG_ID/${DASHBOARD_ORG_ID}/g" \
-              tyk-config/policies/dummy/dummy-api-policy.json > /tmp/dummy-api-policy-deploy.json
+          // Add new services here — each entry drives the full deploy lifecycle
+          def services = [
+            [
+              apiId:            'dummy-api-v1',
+              apiJson:          'tyk-config/apis/dummy/dummy-api.json',
+              policyJson:       'tyk-config/policies/dummy/dummy-api-policy.json',
+              policyName:       'Dummy API Policy',
+              jwksCredentialId: "jwks-url-dummy-${params.ENVIRONMENT}"
+            ],
+            [
+              apiId:            'dummy-api-2-v1',
+              apiJson:          'tyk-config/apis/dummy2/dummy-api-2.json',
+              policyJson:       'tyk-config/policies/dummy2/dummy-api-2-policy.json',
+              policyName:       'Dummy API 2 Policy',
+              jwksCredentialId: "jwks-url-dummy2-${params.ENVIRONMENT}"
+            ]
+          ]
 
-            curl -s -X POST \
-              -H "authorization: ${DASHBOARD_USER_KEY}" \
-              -H "Content-Type: application/json" \
-              ${DASHBOARD_URL}/api/portal/policies \
-              -d @/tmp/dummy-api-policy-deploy.json > /tmp/policy-response.json
+          services.each { svc ->
+            echo "=== Deploying ${svc.apiId} ==="
 
-            echo "Policy response:"
-            cat /tmp/policy-response.json
-          '''
-          env.POLICY_ID = sh(returnStdout: true, script: '''
-            grep -o '"Message":"[^"]*"' /tmp/policy-response.json | cut -d'"' -f4
-          ''').trim()
-          echo "Policy ID: ${env.POLICY_ID}"
+            // Resolve JWKS URL for this service
+            def jwksB64 = ''
+            withCredentials([string(credentialsId: svc.jwksCredentialId, variable: 'JWKS_URL_PLAIN')]) {
+              jwksB64 = sh(returnStdout: true, script: 'printf "%s" "$JWKS_URL_PLAIN" | base64 -w 0').trim()
+            }
+
+            // Delete existing API
+            sh """
+              HTTP_CODE=\$(curl -s -o /dev/null -w "%{http_code}" \
+                -X DELETE \
+                -H "authorization: \${DASHBOARD_USER_KEY}" \
+                \${DASHBOARD_URL}/api/apis/${svc.apiId}) || true
+              echo "Delete API ${svc.apiId} returned: \$HTTP_CODE"
+            """
+
+            // Delete existing policy
+            sh """
+              curl -s \
+                -H "authorization: \${DASHBOARD_USER_KEY}" \
+                \${DASHBOARD_URL}/api/portal/policies > /tmp/policy-list.json
+
+              OLD_POLICY_ID=\$(grep -o '"_id":"[^"]*","id":"[^"]*","name":"${svc.policyName}"' /tmp/policy-list.json \
+                | grep -o '"_id":"[^"]*"' | cut -d'"' -f4)
+
+              if [ -n "\$OLD_POLICY_ID" ]; then
+                curl -s -X DELETE \
+                  -H "authorization: \${DASHBOARD_USER_KEY}" \
+                  \${DASHBOARD_URL}/api/portal/policies/\$OLD_POLICY_ID || true
+                echo "Deleted policy: \$OLD_POLICY_ID"
+              else
+                echo "No existing policy for ${svc.policyName}, skipping delete."
+              fi
+            """
+
+            // Create policy
+            sh """
+              sed "s|DYNAMIC_ORG_ID|\${DASHBOARD_ORG_ID}|g" \
+                ${svc.policyJson} > /tmp/policy-deploy.json
+
+              curl -s -X POST \
+                -H "authorization: \${DASHBOARD_USER_KEY}" \
+                -H "Content-Type: application/json" \
+                \${DASHBOARD_URL}/api/portal/policies \
+                -d @/tmp/policy-deploy.json > /tmp/policy-response.json
+
+              echo "Policy response:"
+              cat /tmp/policy-response.json
+            """
+
+            def policyId = sh(returnStdout: true, script: '''
+              grep -o '"Message":"[^"]*"' /tmp/policy-response.json | cut -d'"' -f4
+            ''').trim()
+            echo "Policy ID: ${policyId}"
+
+            // Create API
+            sh """
+              sed "s|DYNAMIC_ORG_ID|\${DASHBOARD_ORG_ID}|g; s|DYNAMIC_POLICY_ID|${policyId}|g; s|DYNAMIC_JWKS_URL|${jwksB64}|g" \
+                ${svc.apiJson} > /tmp/api-deploy.json
+
+              RESPONSE=\$(curl -s -X POST \
+                -H "authorization: \${DASHBOARD_USER_KEY}" \
+                -H "Content-Type: application/json" \
+                \${DASHBOARD_URL}/api/apis/oas \
+                -d @/tmp/api-deploy.json)
+
+              echo "Create API response: \$RESPONSE"
+            """
+          }
         }
-      }
-    }
-
-    stage('Create API in Dashboard') {
-      steps {
-        sh '''
-          echo "Creating API in Tyk Dashboard using OAS endpoint..."
-
-          sed "s|DYNAMIC_ORG_ID|${DASHBOARD_ORG_ID}|g; s|DYNAMIC_POLICY_ID|${POLICY_ID}|g; s|DYNAMIC_JWKS_URL|${JWKS_URL_B64}|g" \
-            tyk-config/apis/dummy/dummy-api.json > /tmp/dummy-api-oas-deploy.json
-
-          RESPONSE=$(curl -s -X POST \
-            -H "authorization: ${DASHBOARD_USER_KEY}" \
-            -H "Content-Type: application/json" \
-            ${DASHBOARD_URL}/api/apis/oas \
-            -d @/tmp/dummy-api-oas-deploy.json)
-
-          echo "Response: $RESPONSE"
-        '''
       }
     }
 
