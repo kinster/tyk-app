@@ -23,7 +23,7 @@
       "state": { "active": true }
     },
     "upstream": {
-      "url": "http://dummy-backend:3001"
+      "url": "http://dummy-backend-2:3002"
     },
     "server": {
       "listenPath": {

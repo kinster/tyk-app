@@ -50,6 +50,19 @@ services:
       - tyk-net
       - tyk-pro-docker-demo-ee_tyk
 
+  backend2:
+    build:
+      context: ./backend2
+    container_name: dummy-backend-2
+    restart: unless-stopped
+    environment:
+      - PORT=3002
+    ports:
+      - "3031:3002"
+    networks:
+      - tyk-net
+      - tyk-pro-docker-demo-ee_tyk
+
   jenkins:
     image: jenkins/jenkins:lts-jdk17
     container_name: jenkins
