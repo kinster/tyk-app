@@ -47,6 +47,7 @@ pipeline {
           echo "Building all Go plugins with tyk-plugin-compiler:${COMPILER_VERSION}..."
           JENKINS_CONTAINER=$(docker ps --filter "name=jenkins" --format "{{.ID}}" | head -1)
 
+
           find tyk-config/middleware -name "go.mod" | while read gomod; do
             plugin_dir=$(dirname "$gomod")
             plugin_name=$(basename "$plugin_dir")
