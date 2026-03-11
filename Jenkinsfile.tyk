@@ -88,10 +88,16 @@ pipeline {
 
             echo "=== Deploying ${apiId} (${serviceName}) ==="
 
-            // Resolve JWKS URL for this service
+            // Resolve JWKS URL only if the api json requires it
             def jwksB64 = ''
-            withCredentials([string(credentialsId: jwksCredentialId, variable: 'JWKS_URL_PLAIN')]) {
-              jwksB64 = sh(returnStdout: true, script: 'printf "%s" "$JWKS_URL_PLAIN" | base64 -w 0').trim()
+            def needsJwks = sh(returnStdout: true, script: """
+              python3 -c "import json; d=json.load(open('${apiJsonPath}')); print('yes' if 'DYNAMIC_JWKS_URL' in json.dumps(d) else 'no')"
+            """).trim() == 'yes'
+
+            if (needsJwks) {
+              withCredentials([string(credentialsId: jwksCredentialId, variable: 'JWKS_URL_PLAIN')]) {
+                jwksB64 = sh(returnStdout: true, script: 'printf "%s" "$JWKS_URL_PLAIN" | base64 -w 0').trim()
+              }
             }
 
             // Delete existing API
