@@ -1,0 +1,190 @@
+{
+  "oas": {
+    "openapi": "3.0.3",
+    "info": {
+      "title": "Tyk Upstream Java Service API",
+      "version": "1.0.0",
+      "description": "A simple Java service for testing payload handling through Tyk Gateway. Provides GET endpoint for static payload (~95KB) and POST endpoint for echoing request payloads (~100KB)."
+    },
+    "servers": [
+      {
+        "url": "/tyk-upstream-java-service"
+      },
+      {
+        "url": "https://api.sit.evri.com/tyk-upstream-java-service"
+      }
+    ],
+    "security": [
+      {
+        "authToken": []
+      }
+    ],
+    "components": {
+      "securitySchemes": {
+        "authToken": {
+          "type": "apiKey",
+          "name": "apikey",
+          "in": "header"
+        }
+      }
+    },
+    "paths": {
+      "/v1/payload/get": {
+        "get": {
+          "operationId": "payloadGetGET",
+          "summary": "Get static payload",
+          "description": "Returns a static JSON payload of approximately 95KB. Response time may include configurable delay.",
+          "responses": {
+            "200": {
+              "description": "Static JSON payload response",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "description": "Large JSON payload (~95KB)"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/v1/payload/post": {
+        "post": {
+          "operationId": "payloadPostPOST",
+          "summary": "Echo request payload",
+          "description": "Accepts a JSON payload and returns the same payload in the response. Intended for large payloads (~100KB). Response time may include configurable delay.",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Any JSON object"
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Echo of the request payload",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "description": "Same as request payload"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "x-tyk-api-gateway": {
+      "info": {
+        "id": "a7f3c8e9d2b14f6a8c5e7d9f1a3b5c7e",
+        "name": "Tyk Upstream Java Service API",
+        "orgId": "6995beb28a485b000132e245",
+        "state": {
+          "active": true,
+          "internal": false
+        }
+      },
+      "middleware": {
+        "global": {
+          "cache": {
+            "enabled": true,
+            "timeout": 60,
+            "cacheAllSafeRequests": true,
+            "cacheResponseCodes": [
+              200
+            ]
+          },
+          "trafficLogs": {
+            "enabled": true
+          },
+          "contextVariables": {
+            "enabled": true
+          },
+          "pluginConfig": {
+            "driver": "otto",
+            "cors": {
+              "enabled": true,
+              "allowCredentials": true,
+              "allowedOrigins": [
+                "*"
+              ],
+              "allowedMethods": [
+                "GET",
+                "POST",
+                "OPTIONS"
+              ],
+              "allowedHeaders": [
+                "Accept",
+                "Content-Type",
+                "Origin",
+                "X-Requested-With",
+                "Authorization",
+                "apikey"
+              ],
+              "exposedHeaders": [
+                "X-RateLimit-Limit",
+                "X-RateLimit-Remaining",
+                "X-RateLimit-Reset"
+              ],
+              "maxAge": 24,
+              "debug": false
+            }
+          }
+        },
+        "operations": {
+          "payloadGetGET": {
+            "allow": {
+              "enabled": true
+            },
+            "validateRequest": {
+              "enabled": true,
+              "errorResponseCode": 422
+            }
+          },
+          "payloadPostPOST": {
+            "allow": {
+              "enabled": true
+            },
+            "validateRequest": {
+              "enabled": true,
+              "errorResponseCode": 422
+            }
+          }
+        }
+      },
+      "server": {
+        "authentication": {
+          "enabled": true,
+          "securitySchemes": {
+            "authToken": {
+              "enabled": true
+            }
+          }
+        },
+        "listenPath": {
+          "strip": true,
+          "value": "/tyk-upstream-java-service"
+        }
+      },
+      "upstream": {
+        "url": "https://tyk-upstream-poc.sit.evricloud.co.uk",
+        "proxy": {
+          "enabled": false,
+          "url": ""
+        }
+      }
+    }
+  },
+  "hook_references": [],
+  "is_site": false,
+  "sort_by": 0,
+  "user_group_owners": [],
+  "user_owners": []
+}

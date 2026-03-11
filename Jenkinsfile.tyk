@@ -41,32 +41,21 @@ pipeline {
     stage('Build and Deploy Go Plugins') {
       steps {
         sh '''
+          echo "Building plugin compiler image..."
+          docker build \
+            --platform linux/amd64 \
+            -t tyk-plugin-builder:${COMPILER_VERSION} \
+            -f tyk-config/compiler/Dockerfile \
+            tyk-config/
+
           echo "Clearing old plugins from middleware volume..."
           docker run --rm -v tyk_mw:/mw alpine sh -c "rm -f /mw/*.so"
 
-          echo "Building all Go plugins with tyk-plugin-compiler:${COMPILER_VERSION}..."
-          JENKINS_CONTAINER=$(docker ps --filter "name=jenkins" --format "{{.ID}}" | head -1)
-
-
-          find tyk-config/middleware -name "go.mod" | while read gomod; do
-            plugin_dir=$(dirname "$gomod")
-            plugin_name=$(basename "$plugin_dir")
-            echo "--- Compiling: $plugin_name ---"
-            docker run --rm \
-              --platform linux/amd64 \
-              --volumes-from $JENKINS_CONTAINER \
-              -e PLUGIN_SOURCE_PATH=$(pwd)/$plugin_dir \
-              tykio/tyk-plugin-compiler:${COMPILER_VERSION} ${plugin_name}.so "" linux arm64
-          done
-
-          echo "Copying compiled plugins to middleware volume..."
+          echo "Compiling and deploying plugins to middleware volume..."
           docker run --rm \
-            --volumes-from $JENKINS_CONTAINER \
-            -v tyk_mw:/mw \
-            alpine sh -c "find $(pwd)/tyk-config/middleware -name '*.so' -exec cp {} /mw/ \\;"
-
-          echo "Middleware volume contents:"
-          docker run --rm -v tyk_mw:/mw alpine ls -la /mw/
+            --platform linux/amd64 \
+            -v tyk_mw:/output \
+            tyk-plugin-builder:${COMPILER_VERSION}
         '''
       }
     }
@@ -74,30 +63,34 @@ pipeline {
     stage('Deploy APIs') {
       steps {
         script {
-          // Add new services here — each entry drives the full deploy lifecycle
-          def services = [
-            [
-              apiId:            'dummy-api-v1',
-              apiJson:          'tyk-config/apis/dummy/dummy-api.json',
-              policyJson:       'tyk-config/policies/dummy/dummy-api-policy.json',
-              policyName:       'Dummy API Policy',
-              jwksCredentialId: "jwks-url-dummy-${params.ENVIRONMENT}"
-            ],
-            [
-              apiId:            'dummy-api-2-v1',
-              apiJson:          'tyk-config/apis/dummy2/dummy-api-2.json',
-              policyJson:       'tyk-config/policies/dummy2/dummy-api-2-policy.json',
-              policyName:       'Dummy API 2 Policy',
-              jwksCredentialId: "jwks-url-dummy2-${params.ENVIRONMENT}"
-            ]
-          ]
+          // Dynamically discover all API JSON files — adding a new service only
+          // requires dropping files into tyk-config/apis/<service>/ and
+          // tyk-config/policies/<service>/ with a matching credential in Jenkins:
+          // jwks-url-<service>-<environment>
+          def apiFiles = sh(returnStdout: true, script: '''
+            find tyk-config/apis -name "*.json" | sort
+          ''').trim().split('\n')
 
-          services.each { svc ->
-            echo "=== Deploying ${svc.apiId} ==="
+          apiFiles.each { apiJsonPath ->
+            def serviceName    = apiJsonPath.tokenize('/')[-2]
+            def policyJsonPath = sh(returnStdout: true, script: """
+              find tyk-config/policies/${serviceName} -name "*.json" | head -1
+            """).trim()
+
+            def apiId = sh(returnStdout: true, script: """
+              python3 -c "import json; d=json.load(open('${apiJsonPath}')); tyk=d.get('x-tyk-api-gateway') or d.get('oas',{}).get('x-tyk-api-gateway',{}); print(tyk['info']['id'])"
+            """).trim()
+
+            def policyName = sh(returnStdout: true, script: """
+              python3 -c "import json; print(json.load(open('${policyJsonPath}'))['name'])"
+            """).trim()
+            def jwksCredentialId = "jwks-url-${serviceName}-${params.ENVIRONMENT}"
+
+            echo "=== Deploying ${apiId} (${serviceName}) ==="
 
             // Resolve JWKS URL for this service
             def jwksB64 = ''
-            withCredentials([string(credentialsId: svc.jwksCredentialId, variable: 'JWKS_URL_PLAIN')]) {
+            withCredentials([string(credentialsId: jwksCredentialId, variable: 'JWKS_URL_PLAIN')]) {
               jwksB64 = sh(returnStdout: true, script: 'printf "%s" "$JWKS_URL_PLAIN" | base64 -w 0').trim()
             }
 
@@ -106,17 +99,17 @@ pipeline {
               HTTP_CODE=\$(curl -s -o /dev/null -w "%{http_code}" \
                 -X DELETE \
                 -H "authorization: \${DASHBOARD_USER_KEY}" \
-                \${DASHBOARD_URL}/api/apis/${svc.apiId}) || true
-              echo "Delete API ${svc.apiId} returned: \$HTTP_CODE"
+                \${DASHBOARD_URL}/api/apis/${apiId}) || true
+              echo "Delete API ${apiId} returned: \$HTTP_CODE"
             """
 
             // Delete existing policy
             sh """
               curl -s \
                 -H "authorization: \${DASHBOARD_USER_KEY}" \
-                \${DASHBOARD_URL}/api/portal/policies > /tmp/policy-list.json
+                \${DASHBOARD_URL}/api/portal/policies > /tmp/${apiId}-policy-list.json
 
-              OLD_POLICY_ID=\$(grep -o '"_id":"[^"]*","id":"[^"]*","name":"${svc.policyName}"' /tmp/policy-list.json \
+              OLD_POLICY_ID=\$(grep -o '"_id":"[^"]*","id":"[^"]*","name":"${policyName}"' /tmp/${apiId}-policy-list.json \
                 | grep -o '"_id":"[^"]*"' | cut -d'"' -f4)
 
               if [ -n "\$OLD_POLICY_ID" ]; then
@@ -125,40 +118,40 @@ pipeline {
                   \${DASHBOARD_URL}/api/portal/policies/\$OLD_POLICY_ID || true
                 echo "Deleted policy: \$OLD_POLICY_ID"
               else
-                echo "No existing policy for ${svc.policyName}, skipping delete."
+                echo "No existing policy for ${policyName}, skipping delete."
               fi
             """
 
             // Create policy
             sh """
               sed "s|DYNAMIC_ORG_ID|\${DASHBOARD_ORG_ID}|g" \
-                ${svc.policyJson} > /tmp/policy-deploy.json
+                ${policyJsonPath} > /tmp/${apiId}-policy-deploy.json
 
               curl -s -X POST \
                 -H "authorization: \${DASHBOARD_USER_KEY}" \
                 -H "Content-Type: application/json" \
                 \${DASHBOARD_URL}/api/portal/policies \
-                -d @/tmp/policy-deploy.json > /tmp/policy-response.json
+                -d @/tmp/${apiId}-policy-deploy.json > /tmp/${apiId}-policy-response.json
 
               echo "Policy response:"
-              cat /tmp/policy-response.json
+              cat /tmp/${apiId}-policy-response.json
             """
 
-            def policyId = sh(returnStdout: true, script: '''
-              grep -o '"Message":"[^"]*"' /tmp/policy-response.json | cut -d'"' -f4
-            ''').trim()
+            def policyId = sh(returnStdout: true, script: """
+              grep -o '"Message":"[^"]*"' /tmp/${apiId}-policy-response.json | cut -d'"' -f4
+            """).trim()
             echo "Policy ID: ${policyId}"
 
             // Create API
             sh """
               sed "s|DYNAMIC_ORG_ID|\${DASHBOARD_ORG_ID}|g; s|DYNAMIC_POLICY_ID|${policyId}|g; s|DYNAMIC_JWKS_URL|${jwksB64}|g" \
-                ${svc.apiJson} > /tmp/api-deploy.json
+                ${apiJsonPath} > /tmp/${apiId}-api-deploy.json
 
               RESPONSE=\$(curl -s -X POST \
                 -H "authorization: \${DASHBOARD_USER_KEY}" \
                 -H "Content-Type: application/json" \
                 \${DASHBOARD_URL}/api/apis/oas \
-                -d @/tmp/api-deploy.json)
+                -d @/tmp/${apiId}-api-deploy.json)
 
               echo "Create API response: \$RESPONSE"
             """
