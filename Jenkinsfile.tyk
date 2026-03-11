@@ -142,10 +142,18 @@ pipeline {
             """).trim()
             echo "Policy ID: ${policyId}"
 
-            // Create API
+            // Create API — unwrap oas envelope if present, then substitute placeholders
             sh """
-              sed "s|DYNAMIC_ORG_ID|\${DASHBOARD_ORG_ID}|g; s|DYNAMIC_POLICY_ID|${policyId}|g; s|DYNAMIC_JWKS_URL|${jwksB64}|g" \
-                ${apiJsonPath} > /tmp/${apiId}-api-deploy.json
+              python3 -c "
+import json
+d = json.load(open('${apiJsonPath}'))
+oas = d.get('oas', d)
+out = json.dumps(oas)
+out = out.replace('DYNAMIC_ORG_ID', '\${DASHBOARD_ORG_ID}')
+out = out.replace('DYNAMIC_POLICY_ID', '${policyId}')
+out = out.replace('DYNAMIC_JWKS_URL', '${jwksB64}')
+print(out)
+" > /tmp/${apiId}-api-deploy.json
 
               RESPONSE=\$(curl -s -X POST \
                 -H "authorization: \${DASHBOARD_USER_KEY}" \
