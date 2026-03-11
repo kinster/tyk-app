@@ -1,76 +1,83 @@
 {
-  "openapi": "3.0.3",
-  "info": {
-    "title": "dummy-api-2",
-    "version": "1.0.0"
-  },
-  "paths": {},
-  "components": {
-    "securitySchemes": {
-      "jwtAuth": {
-        "type": "http",
-        "scheme": "bearer",
-        "bearerFormat": "JWT"
-      }
-    }
-  },
-  "security": [{ "jwtAuth": [] }],
-  "x-tyk-api-gateway": {
+  "oas": {
+    "openapi": "3.0.3",
     "info": {
-      "name": "dummy-api-2",
-      "id": "dummy-api-2-v1",
-      "orgId": "DYNAMIC_ORG_ID",
-      "state": { "active": true }
+      "title": "dummy-api-2",
+      "version": "1.0.0"
     },
-    "upstream": {
-      "url": "http://dummy-backend-2:3002"
-    },
-    "server": {
-      "listenPath": {
-        "value": "/dummy2-proxy/",
-        "strip": true
-      },
-      "authentication": {
-        "enabled": true,
-        "securitySchemes": {
-          "jwtAuth": {
-            "enabled": true,
-            "signingMethod": "rsa",
-            "source": "DYNAMIC_JWKS_URL",
-            "identityBaseField": "sub",
-            "defaultPolicies": ["DYNAMIC_POLICY_ID"],
-            "header": {
-              "enabled": true,
-              "name": "Authorization"
-            }
-          }
+    "paths": {},
+    "components": {
+      "securitySchemes": {
+        "jwtAuth": {
+          "type": "http",
+          "scheme": "bearer",
+          "bearerFormat": "JWT"
         }
       }
     },
-    "middleware": {
-      "global": {
-        "pluginConfig": {
-          "driver": "goplugin"
+    "security": [{ "jwtAuth": [] }],
+    "x-tyk-api-gateway": {
+      "info": {
+        "name": "dummy-api-2",
+        "id": "dummy-api-2-v1",
+        "orgId": "DYNAMIC_ORG_ID",
+        "state": { "active": true }
+      },
+      "upstream": {
+        "url": "http://dummy-backend-2:3002"
+      },
+      "server": {
+        "listenPath": {
+          "value": "/dummy2-proxy/",
+          "strip": true
         },
-        "prePlugins": [
-          {
-            "enabled": true,
-            "functionName": "AddRequestID",
-            "name": "AddRequestID",
-            "path": "middleware/add_request_id_v5.11.0_linux_arm64.so",
-            "rawBodyOnly": false
+        "authentication": {
+          "enabled": true,
+          "securitySchemes": {
+            "jwtAuth": {
+              "enabled": true,
+              "signingMethod": "rsa",
+              "source": "DYNAMIC_JWKS_URL",
+              "identityBaseField": "sub",
+              "defaultPolicies": ["DYNAMIC_POLICY_ID"],
+              "header": {
+                "enabled": true,
+                "name": "Authorization"
+              }
+            }
           }
-        ],
-        "responsePlugins": [
-          {
-            "enabled": true,
-            "functionName": "EnrichResponse",
-            "name": "EnrichResponse",
-            "path": "middleware/enrich_response_v5.11.0_linux_arm64.so",
-            "rawBodyOnly": false
-          }
-        ]
+        }
+      },
+      "middleware": {
+        "global": {
+          "pluginConfig": {
+            "driver": "goplugin"
+          },
+          "prePlugins": [
+            {
+              "enabled": true,
+              "functionName": "AddRequestID",
+              "name": "AddRequestID",
+              "path": "middleware/add_request_id_v5.11.0_linux_arm64.so",
+              "rawBodyOnly": false
+            }
+          ],
+          "responsePlugins": [
+            {
+              "enabled": true,
+              "functionName": "EnrichResponse",
+              "name": "EnrichResponse",
+              "path": "middleware/enrich_response_v5.11.0_linux_arm64.so",
+              "rawBodyOnly": false
+            }
+          ]
+        }
       }
     }
-  }
+  },
+  "hook_references": [],
+  "is_site": false,
+  "sort_by": 0,
+  "user_group_owners": [],
+  "user_owners": []
 }
